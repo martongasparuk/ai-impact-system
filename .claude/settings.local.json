@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-vite@latest . --template react --)",
+      "Bash(npx create-vite@latest . --template react)",
+      "Bash(npx --yes create-vite@latest . --template react)",
+      "Bash(npm create:*)",
+      "Bash(mv temp-project/* temp-project/.* .)",
+      "Bash(rm -rf temp-project)",
+      "Bash(npm install:*)",
+      "Bash(rm -f src/assets/react.svg src/assets/vite.svg src/assets/hero.png)",
+      "Bash(npm run:*)",
+      "Bash(node -e \"const l = require\\('lucide-react'\\); console.log\\(Object.keys\\(l\\).filter\\(k => k.toLowerCase\\(\\).includes\\('linkedin'\\)\\).join\\(', '\\)\\)\")",
+      "Bash(npx vite:*)",
+      "Bash(gh auth:*)",
+      "Bash(git config:*)"
+    ]
+  }
+}
