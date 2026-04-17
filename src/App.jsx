@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import {
   ArrowRight,
   Target,
@@ -19,8 +19,15 @@ import {
   Brain,
   Crosshair,
   FileText,
+  Menu,
+  X,
 } from 'lucide-react'
 import './App.css'
+
+/* ─── constants ─── */
+const REVEAL_THRESHOLD = 0.12
+const CALENDLY_URL = import.meta.env.VITE_CALENDLY_URL || 'https://calendly.com/martongaspar/30min'
+const CONTACT_EMAIL = import.meta.env.VITE_CONTACT_EMAIL || 'marton.gaspar.uk@gmail.com'
 
 /* ─── scroll-reveal hook ─── */
 function useReveal() {
@@ -35,7 +42,7 @@ function useReveal() {
           obs.unobserve(el)
         }
       },
-      { threshold: 0.12 }
+      { threshold: REVEAL_THRESHOLD }
     )
     obs.observe(el)
     return () => obs.disconnect()
@@ -57,15 +64,13 @@ function Reveal({ children, className = '', delay = 0 }) {
 }
 
 /* ─── reusable CTA button ─── */
-const CALENDLY_URL = 'https://calendly.com/martongaspar/30min'
-
 function CTAButton({ large, className = '' }) {
   return (
     <a
       href={CALENDLY_URL}
       target="_blank"
       rel="noopener noreferrer"
-      className={`group inline-flex items-center gap-2 bg-accent-400 hover:bg-accent-500 text-white font-semibold rounded-lg transition-all duration-300 hover:shadow-[0_0_30px_rgba(99,102,241,0.4)] ${large ? 'px-8 py-4 text-lg' : 'px-6 py-3 text-base'} ${className}`}
+      className={`group inline-flex items-center gap-2 bg-accent-500 hover:bg-accent-600 text-white font-semibold rounded-lg transition-all duration-300 hover:shadow-[0_0_30px_rgba(99,102,241,0.4)] ${large ? 'px-8 py-4 text-lg' : 'px-6 py-3 text-base'} ${className}`}
     >
       Book a diagnostic call
       <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
@@ -73,10 +78,99 @@ function CTAButton({ large, className = '' }) {
   )
 }
 
+/* ─── NAVBAR ─── */
+const NAV_LINKS = [
+  { label: 'System', href: '#system' },
+  { label: 'Offer', href: '#offer' },
+  { label: 'About', href: '#about' },
+]
+
+function Navbar() {
+  const [scrolled, setScrolled] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 40)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  return (
+    <nav
+      aria-label="Primary"
+      className={`fixed top-0 inset-x-0 z-40 transition-all duration-300 ${
+        scrolled
+          ? 'bg-dark-950/80 backdrop-blur-lg border-b border-dark-600/30 shadow-lg shadow-black/20'
+          : 'bg-transparent'
+      }`}
+    >
+      <div className="max-w-7xl mx-auto px-6 lg:px-8 flex items-center justify-between h-16">
+        <a href="#" className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-accent-400/10 flex items-center justify-center">
+            <Target className="w-4 h-4 text-accent-400" />
+          </div>
+          <span className="text-white font-bold text-lg">AI IMPACT</span>
+        </a>
+
+        {/* desktop links */}
+        <div className="hidden md:flex items-center gap-8">
+          {NAV_LINKS.map((l) => (
+            <a key={l.href} href={l.href} className="text-sm text-gray-400 hover:text-white transition-colors">
+              {l.label}
+            </a>
+          ))}
+          <a
+            href={CALENDLY_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-accent-500 hover:bg-accent-600 text-white text-sm font-semibold rounded-lg px-5 py-2 transition-all duration-300 hover:shadow-[0_0_20px_rgba(99,102,241,0.3)]"
+          >
+            Book a call
+          </a>
+        </div>
+
+        {/* mobile toggle */}
+        <button
+          onClick={() => setMobileOpen(!mobileOpen)}
+          className="md:hidden text-gray-400 hover:text-white transition-colors"
+          aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={mobileOpen}
+        >
+          {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
+      </div>
+
+      {/* mobile menu */}
+      {mobileOpen && (
+        <div className="md:hidden bg-dark-950/95 backdrop-blur-lg border-b border-dark-600/30 px-6 pb-6 pt-2">
+          {NAV_LINKS.map((l) => (
+            <a
+              key={l.href}
+              href={l.href}
+              onClick={() => setMobileOpen(false)}
+              className="block py-3 text-gray-300 hover:text-white transition-colors"
+            >
+              {l.label}
+            </a>
+          ))}
+          <a
+            href={CALENDLY_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 block text-center bg-accent-500 hover:bg-accent-600 text-white font-semibold rounded-lg px-5 py-3 transition-colors"
+          >
+            Book a call
+          </a>
+        </div>
+      )}
+    </nav>
+  )
+}
+
 /* ─── HERO ─── */
 function Hero() {
   return (
-    <section className="relative min-h-[90vh] flex items-center overflow-hidden">
+    <section className="relative min-h-[90vh] flex items-center overflow-hidden pt-16">
       {/* bg glow */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-accent-400/8 rounded-full blur-[120px]" />
@@ -131,13 +225,13 @@ function Hero() {
             </Reveal>
           </div>
 
-          {/* right -abstract data viz */}
-          <Reveal delay={200} className="hidden lg:block">
+          {/* right — data viz */}
+          <Reveal delay={200}>
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-br from-accent-400/10 to-cyan-400/10 rounded-2xl blur-xl" />
-              <div className="relative bg-dark-800/80 border border-dark-600 rounded-2xl p-8 backdrop-blur-sm">
-                {/* mock dashboard */}
-                <div className="flex items-center gap-3 mb-6">
+              <div className="relative bg-dark-800/80 border border-dark-600 rounded-2xl p-6 lg:p-8 backdrop-blur-sm">
+                {/* window chrome */}
+                <div className="flex items-center gap-3 mb-4 lg:mb-6">
                   <div className="w-3 h-3 rounded-full bg-red-400/60" />
                   <div className="w-3 h-3 rounded-full bg-yellow-400/60" />
                   <div className="w-3 h-3 rounded-full bg-green-400/60" />
@@ -161,8 +255,9 @@ function Hero() {
                       </div>
                     ))}
                   </div>
-                  <div className="h-px bg-dark-600" />
-                  <div className="space-y-2">
+                  {/* progress bars — desktop only */}
+                  <div className="hidden lg:block space-y-2">
+                    <div className="h-px bg-dark-600" />
                     {[
                       { name: 'Customer Support Bot', status: 'Scaling', pct: 85, color: 'bg-green-400' },
                       { name: 'Doc Processing', status: 'Evaluating', pct: 45, color: 'bg-yellow-400' },
@@ -222,8 +317,7 @@ function Problem() {
         </Reveal>
 
         <Reveal delay={200}>
-          <p className="text-lg text-gray-400 mb-4">On the surface, it looks like progress.</p>
-          <p className="text-lg text-gray-400 mb-8">But when leadership asks:</p>
+          <p className="text-lg text-gray-400 mb-4">On the surface, it looks like progress. But when leadership asks:</p>
         </Reveal>
 
         <Reveal delay={250}>
@@ -235,43 +329,20 @@ function Problem() {
         </Reveal>
 
         <Reveal delay={300}>
-          <p className="text-lg text-gray-400">
-            The answers break down. Not because nothing is happening -but because there is no clear way to explain what's working.
-          </p>
-          <p className="text-lg text-gray-500 mt-4 font-medium">
-            This is where most AI efforts stall.
-          </p>
-        </Reveal>
-      </div>
-    </section>
-  )
-}
-
-/* ─── CONSEQUENCES ─── */
-function Consequences() {
-  return (
-    <section className="py-16 lg:py-20 relative">
-      <div className="absolute inset-0 bg-dark-900" />
-      <div className="relative z-10 max-w-4xl mx-auto px-6 lg:px-8">
-        <Reveal>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white leading-tight mb-10">
-            The cost isn't just wasted effort.
-          </h2>
-        </Reveal>
-
-        <Reveal delay={100}>
           <p className="text-lg text-gray-400 mb-8">
-            Without a clear way to define and measure AI impact:
+            The answers break down because no one knows which workflows matter most,
+            which initiatives are actually working, and what should be stopped.
           </p>
         </Reveal>
 
+        {/* consequences */}
         <div className="grid sm:grid-cols-3 gap-6 mb-10">
           {[
             { icon: TrendingUp, title: 'Budget grows', desc: 'Spending keeps increasing without proof of return' },
             { icon: Clock, title: 'Work repeats', desc: 'Teams duplicate effort instead of scaling what works' },
             { icon: Shield, title: 'Confidence drops', desc: 'Leaders lose faith in the direction' },
           ].map((c, i) => (
-            <Reveal key={c.title} delay={150 + i * 80}>
+            <Reveal key={c.title} delay={350 + i * 80}>
               <div className="bg-dark-800/60 border border-dark-600/50 rounded-xl p-6 hover:border-red-400/30 transition-colors duration-300">
                 <c.icon className="w-8 h-8 text-red-400/70 mb-4" />
                 <h3 className="text-white font-semibold text-lg mb-2">{c.title}</h3>
@@ -281,7 +352,7 @@ function Consequences() {
           ))}
         </div>
 
-        <Reveal delay={400}>
+        <Reveal delay={600}>
           <p className="text-lg text-gray-400 mb-8">
             This is not a technology problem.{' '}
             <span className="text-white font-semibold">It's a decision and clarity problem.</span>
@@ -321,58 +392,6 @@ function ICPFilter() {
           ))}
         </div>
 
-        <Reveal delay={400}>
-          <div className="flex items-start gap-3 px-5 py-4 bg-dark-800/30 border border-dark-600/20 rounded-xl">
-            <XCircle className="w-5 h-5 text-gray-600 mt-0.5 shrink-0" />
-            <span className="text-gray-500 italic">
-              This is not for companies still exploring what AI is.
-            </span>
-          </div>
-        </Reveal>
-      </div>
-    </section>
-  )
-}
-
-/* ─── CORE INSIGHT ─── */
-function CoreInsight() {
-  return (
-    <section className="py-16 lg:py-20 relative">
-      <div className="absolute inset-0 bg-dark-900" />
-      <div className="relative z-10 max-w-4xl mx-auto px-6 lg:px-8">
-        <Reveal>
-          <p className="text-accent-400 font-semibold text-sm uppercase tracking-wider mb-4">The real problem</p>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white leading-tight mb-10">
-            Most companies are spending money on AI{' '}
-            <span className="text-gray-500">without knowing:</span>
-          </h2>
-        </Reveal>
-
-        <Reveal delay={100}>
-          <ul className="space-y-4 mb-10">
-            {[
-              'Which workflows matter most',
-              'Which initiatives are actually working',
-              'What should be stopped',
-            ].map((t) => (
-              <li key={t} className="flex items-start gap-3 text-xl text-gray-300">
-                <ChevronRight className="w-5 h-5 text-accent-400 mt-1 shrink-0" />
-                <span>{t}</span>
-              </li>
-            ))}
-          </ul>
-        </Reveal>
-
-        <Reveal delay={200}>
-          <div className="bg-dark-800/60 border border-dark-600/50 rounded-xl p-8">
-            <p className="text-lg text-gray-400">
-              So spending grows. Results don't show up in the P&L.
-            </p>
-            <p className="text-lg text-white font-semibold mt-4">
-              And the story becomes harder to defend.
-            </p>
-          </div>
-        </Reveal>
       </div>
     </section>
   )
@@ -390,7 +409,7 @@ function Method() {
   ]
 
   return (
-    <section className="py-16 lg:py-20 relative">
+    <section id="system" className="py-16 lg:py-20 relative scroll-mt-20">
       <div className="absolute inset-0 bg-gradient-to-b from-dark-900 via-dark-950 to-dark-900" />
       {/* subtle accent glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-accent-400/5 rounded-full blur-[120px] pointer-events-none" />
@@ -405,7 +424,7 @@ function Method() {
             </span>{' '}
             System
           </h2>
-          <p className="text-gray-500 text-center mb-10 text-lg">Six steps. Ten days. Complete clarity.</p>
+          <p className="text-gray-400 text-center mb-10 text-lg">Six steps. Ten days. Complete clarity.</p>
         </Reveal>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
@@ -428,6 +447,18 @@ function Method() {
         </div>
 
         <Reveal delay={500}>
+          <div className="grid sm:grid-cols-2 gap-4 max-w-md mx-auto sm:max-w-none mb-10">
+            {[
+              { from: 'Activity', to: 'Impact' },
+              { from: 'Opinion', to: 'Proof' },
+            ].map((r) => (
+              <div key={r.from} className="flex items-center justify-center gap-4 bg-dark-800/40 border border-dark-600/30 rounded-xl p-5">
+                <span className="text-red-400/70 line-through text-lg">{r.from}</span>
+                <ArrowRight className="w-4 h-4 text-accent-400" />
+                <span className="text-accent-400 font-semibold text-lg">{r.to}</span>
+              </div>
+            ))}
+          </div>
           <div className="text-center">
             <CTAButton />
           </div>
@@ -440,7 +471,7 @@ function Method() {
 /* ─── OFFER ─── */
 function Offer() {
   return (
-    <section className="py-16 lg:py-20 relative">
+    <section id="offer" className="py-16 lg:py-20 relative scroll-mt-20">
       <div className="absolute inset-0 bg-dark-900" />
       <div className="relative z-10 max-w-5xl mx-auto px-6 lg:px-8">
         <div className="bg-gradient-to-br from-dark-800 to-dark-800/50 border border-dark-600/50 rounded-2xl p-8 lg:p-14">
@@ -525,7 +556,7 @@ function Deliverables() {
                   <d.icon className="w-6 h-6 text-accent-400" />
                 </div>
                 <h3 className="text-white font-semibold mb-2">{d.title}</h3>
-                <p className="text-gray-500 text-sm">{d.desc}</p>
+                <p className="text-gray-400 text-sm">{d.desc}</p>
               </div>
             </Reveal>
           ))}
@@ -551,7 +582,7 @@ function Stats() {
             <Reveal key={s.label} delay={i * 60}>
               <div>
                 <div className="text-4xl lg:text-5xl font-extrabold text-white mb-1">{s.num}</div>
-                <div className="text-gray-500 text-sm uppercase tracking-wider">{s.label}</div>
+                <div className="text-gray-400 text-sm uppercase tracking-wider">{s.label}</div>
               </div>
             </Reveal>
           ))}
@@ -561,62 +592,7 @@ function Stats() {
   )
 }
 
-/* ─── WHY THIS WORKS (PROOF) ─── */
-function Proof() {
-  return (
-    <section className="py-16 lg:py-20 relative">
-      <div className="absolute inset-0 bg-dark-900" />
-      <div className="relative z-10 max-w-4xl mx-auto px-6 lg:px-8">
-        <Reveal>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white leading-tight mb-10">
-            Why this works
-          </h2>
-        </Reveal>
 
-        <Reveal delay={100}>
-          <p className="text-lg text-gray-400 mb-10">
-            Most AI efforts fail for the same reason:{' '}
-            <span className="text-white">they are not tied to real workflows or measured in a consistent way.</span>
-          </p>
-        </Reveal>
-
-        <Reveal delay={150}>
-          <div className="bg-dark-800/60 border border-dark-600/50 rounded-xl p-8 mb-10">
-            <h3 className="text-white font-semibold mb-5">This system forces:</h3>
-            <ul className="space-y-3">
-              {[
-                'Clarity on where AI matters',
-                'Discipline in prioritisation',
-                'Evidence-based decision making',
-              ].map((t) => (
-                <li key={t} className="flex items-start gap-3 text-gray-300">
-                  <CheckCircle2 className="w-4 h-4 text-accent-400 mt-1 shrink-0" />
-                  <span>{t}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </Reveal>
-
-        <Reveal delay={250}>
-          <div className="grid sm:grid-cols-2 gap-4 mb-10">
-            {[
-              { from: 'Activity', to: 'Impact' },
-              { from: 'Opinion', to: 'Proof' },
-            ].map((r) => (
-              <div key={r.from} className="flex items-center gap-4 bg-dark-800/40 border border-dark-600/30 rounded-xl p-5">
-                <span className="text-red-400/70 line-through text-lg">{r.from}</span>
-                <ArrowRight className="w-4 h-4 text-accent-400" />
-                <span className="text-accent-400 font-semibold text-lg">{r.to}</span>
-              </div>
-            ))}
-          </div>
-          <CTAButton />
-        </Reveal>
-      </div>
-    </section>
-  )
-}
 
 /* ─── RISK REVERSAL ─── */
 function RiskReversal() {
@@ -630,7 +606,7 @@ function RiskReversal() {
             If we cannot identify clear, measurable opportunities for AI to impact your business,
             you will know within the first few days.
           </p>
-          <p className="text-gray-500">
+          <p className="text-gray-400">
             You are not committing to a long transformation programme.
           </p>
           <p className="text-white font-semibold mt-2">
@@ -645,7 +621,7 @@ function RiskReversal() {
 /* ─── ABOUT ─── */
 function About() {
   return (
-    <section className="py-16 lg:py-20 relative">
+    <section id="about" className="py-16 lg:py-20 relative scroll-mt-20">
       <div className="absolute inset-0 bg-dark-900" />
       <div className="relative z-10 max-w-3xl mx-auto px-6 lg:px-8">
         <Reveal>
@@ -699,22 +675,38 @@ function BottomCTA() {
 
 /* ─── NEWSLETTER ─── */
 function Newsletter() {
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    const input = e.target.elements.email
+    if (!input.value || !input.validity.valid) {
+      input.setCustomValidity('Please enter a valid email address')
+      input.reportValidity()
+      return
+    }
+    input.setCustomValidity('')
+  }
+
   return (
     <section className="py-16 relative">
       <div className="absolute inset-0 bg-dark-800/30 border-y border-dark-600/20" />
       <div className="relative z-10 max-w-xl mx-auto px-6 lg:px-8 text-center">
         <Reveal>
           <p className="text-white font-semibold text-lg mb-2">Get AI strategy insights</p>
-          <p className="text-gray-500 text-sm mb-6">No fluff. Just clarity on making AI work for your business.</p>
-          <form className="flex gap-3 max-w-md mx-auto" onSubmit={(e) => e.preventDefault()}>
+          <p className="text-gray-400 text-sm mb-6">No fluff. Just clarity on making AI work for your business.</p>
+          <form className="flex gap-3 max-w-md mx-auto" onSubmit={handleSubmit}>
+            <label htmlFor="newsletter-email" className="sr-only">Email address</label>
             <input
+              id="newsletter-email"
+              name="email"
               type="email"
+              required
               placeholder="your@email.com"
               className="flex-1 bg-dark-700/60 border border-dark-600/50 rounded-lg px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-accent-400/50 transition-colors"
+              onInput={(e) => e.target.setCustomValidity('')}
             />
             <button
               type="submit"
-              className="bg-accent-400 hover:bg-accent-500 text-white font-semibold rounded-lg px-6 py-3 text-sm transition-all duration-300 hover:shadow-[0_0_20px_rgba(99,102,241,0.3)] whitespace-nowrap"
+              className="bg-accent-500 hover:bg-accent-600 text-white font-semibold rounded-lg px-6 py-3 text-sm transition-all duration-300 hover:shadow-[0_0_20px_rgba(99,102,241,0.3)] whitespace-nowrap"
             >
               Subscribe
             </button>
@@ -739,17 +731,19 @@ function Footer() {
             <span className="text-white font-bold text-lg">AI IMPACT</span>
           </div>
 
-          <nav className="flex gap-8 text-sm text-gray-500">
+          <nav aria-label="Footer" className="flex flex-wrap gap-x-8 gap-y-2 text-sm text-gray-400">
             <a href={CALENDLY_URL} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Book a Call</a>
             <a href="https://www.linkedin.com/in/martongaspar/" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">LinkedIn</a>
-            <a href="mailto:hello@example.com" className="hover:text-white transition-colors">Contact</a>
+            <a href={`mailto:${CONTACT_EMAIL}`} className="hover:text-white transition-colors">Contact</a>
+            <a href="/privacy.html" className="hover:text-white transition-colors">Privacy</a>
+            <a href="/terms.html" className="hover:text-white transition-colors">Terms</a>
           </nav>
 
           <div className="flex items-center gap-4">
-            <a href="https://www.linkedin.com/in/martongaspar/" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-accent-400 transition-colors">
+            <a href="https://www.linkedin.com/in/martongaspar/" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-accent-400 transition-colors" aria-label="LinkedIn profile">
               <ExternalLink className="w-5 h-5" />
             </a>
-            <a href="mailto:hello@example.com" className="text-gray-600 hover:text-accent-400 transition-colors">
+            <a href={`mailto:${CONTACT_EMAIL}`} className="text-gray-600 hover:text-accent-400 transition-colors" aria-label="Send email">
               <Mail className="w-5 h-5" />
             </a>
           </div>
@@ -763,20 +757,38 @@ function Footer() {
   )
 }
 
-/* ─── SOCIAL PROOF LOGOS ─── */
+/* ─── SOCIAL PROOF ─── */
 function SocialProof() {
-  const logos = ['EY', 'NHS', 'Microsoft', 'Edelman', 'Mindshare', 'IBM']
+  const imageBrands = [
+    { name: 'Microsoft', src: '/logos/microsoft.svg', h: 'h-7' },
+    { name: 'IBM', src: '/logos/ibm.svg', h: 'h-6' },
+  ]
+  const textBrands = ['Netflix', 'Amazon', 'eBay', 'BCG', 'EY', 'NHS', 'Edelman', 'Mindshare']
+
   return (
-    <section className="py-16 relative">
-      <div className="absolute inset-0 bg-dark-900" />
+    <section className="py-16 lg:py-20 relative">
+      <div className="absolute inset-0 bg-dark-800/40 border-y border-dark-600/30" />
       <div className="relative z-10 max-w-5xl mx-auto px-6 lg:px-8 text-center">
         <Reveal>
-          <p className="text-gray-600 text-xs uppercase tracking-widest mb-8">
-            Trusted by strategy leaders at
+          <p className="text-gray-400 text-sm uppercase tracking-wider mb-10">
+            Leaders I've worked with come from
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-6">
-            {logos.map((name) => (
-              <span key={name} className="text-gray-600/60 font-semibold text-lg tracking-wide hover:text-gray-500 transition-colors">
+        </Reveal>
+        <Reveal delay={100}>
+          <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-8 sm:gap-x-14">
+            {imageBrands.map((l) => (
+              <img
+                key={l.name}
+                src={l.src}
+                alt={l.name}
+                className={`${l.h} w-auto brightness-0 invert opacity-70`}
+              />
+            ))}
+            {textBrands.map((name) => (
+              <span
+                key={name}
+                className="text-xl font-bold tracking-wide text-gray-300 select-none"
+              >
                 {name}
               </span>
             ))}
@@ -784,6 +796,116 @@ function SocialProof() {
         </Reveal>
       </div>
     </section>
+  )
+}
+
+/* ─── TESTIMONIALS ─── */
+function Testimonials() {
+  const quotes = [
+    {
+      text: 'Candid yet compassionate feedback, always linking it to desired culture, outcomes and overarching strategy.',
+      name: 'Pete Ward',
+      role: 'Deputy Director',
+      url: 'https://www.linkedin.com/in/peteward/',
+    },
+    {
+      text: 'A rare set of creative skills and psychology understanding to challenge existing mindsets and ways of doing things.',
+      name: 'Alex McCallum',
+      role: 'Interim Chief Data Officer, EY',
+      url: 'https://www.linkedin.com/in/alexmccallum/',
+    },
+    {
+      text: 'Led the company into the age of modern product development, transforming the company to one that measures its success by outcomes, not outputs.',
+      name: 'Alexandra Heimiller',
+      role: 'Product Director',
+      url: 'https://www.linkedin.com/in/alexandraheimiller/',
+    },
+    {
+      text: 'An outcome-based approach, and a clear understanding of how to deliver value efficiently. He strikes an effective balance between being driven and being empathetic.',
+      name: 'Ravi Sachdev',
+      role: 'Senior Product Manager, Dept for Education',
+      url: 'https://www.linkedin.com/in/ravisachdev/',
+    },
+  ]
+
+  return (
+    <section className="py-16 lg:py-20 relative">
+      <div className="absolute inset-0 bg-gradient-to-b from-dark-900 via-dark-950 to-dark-900" />
+      <div className="relative z-10 max-w-5xl mx-auto px-6 lg:px-8">
+        <Reveal>
+          <p className="text-accent-400 font-semibold text-sm uppercase tracking-wider mb-4 text-center">Testimonials</p>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-white leading-tight mb-12 text-center">
+            What leaders say
+          </h2>
+        </Reveal>
+
+        <div className="grid sm:grid-cols-2 gap-6">
+          {quotes.map((q, i) => (
+            <Reveal key={q.name} delay={i * 80}>
+              <div className="bg-dark-800/50 border border-dark-600/40 rounded-xl p-6 h-full flex flex-col">
+                <blockquote className="text-gray-300 leading-relaxed mb-6 flex-1">
+                  "{q.text}"
+                </blockquote>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-white font-semibold text-sm">{q.name}</p>
+                    <p className="text-gray-500 text-xs">{q.role}</p>
+                  </div>
+                  <a
+                    href={q.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-600 hover:text-accent-400 transition-colors"
+                    aria-label={`${q.name} on LinkedIn`}
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                </div>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+/* ─── COOKIE CONSENT ─── */
+function CookieConsent() {
+  const [visible, setVisible] = React.useState(() => {
+    try { return !localStorage.getItem('cookie-consent') } catch { return true }
+  })
+
+  if (!visible) return null
+
+  const dismiss = (choice) => {
+    try { localStorage.setItem('cookie-consent', choice) } catch {}
+    setVisible(false)
+  }
+
+  return (
+    <div role="dialog" aria-label="Cookie consent" className="fixed bottom-0 inset-x-0 z-50 bg-dark-800 border-t border-dark-600 px-6 py-4">
+      <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center gap-4 text-sm">
+        <p className="text-gray-300">
+          This site uses third-party services (Calendly, Google Fonts) that may set cookies.{' '}
+          <a href="/privacy.html" className="text-accent-400 hover:underline">Privacy Policy</a>
+        </p>
+        <div className="flex gap-3 shrink-0">
+          <button
+            onClick={() => dismiss('rejected')}
+            className="border border-dark-500 hover:border-gray-400 text-gray-300 font-semibold rounded-lg px-5 py-2 text-sm transition-colors whitespace-nowrap"
+          >
+            Reject
+          </button>
+          <button
+            onClick={() => dismiss('accepted')}
+            className="bg-accent-500 hover:bg-accent-600 text-white font-semibold rounded-lg px-5 py-2 text-sm transition-colors whitespace-nowrap"
+          >
+            Accept
+          </button>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -801,23 +923,37 @@ export default function App() {
           opacity: 1;
           transform: translateY(0);
         }
+        .sr-only {
+          position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+          overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+        }
+        .sr-only:focus {
+          position: fixed; top: 0; left: 0; z-index: 100; width: auto; height: auto;
+          padding: 1rem 1.5rem; margin: 0; overflow: visible; clip: auto;
+          background: #818cf8; color: #fff; font-size: 1rem; white-space: normal;
+        }
       `}</style>
-      <Hero />
-      <Problem />
-      <Consequences />
-      <ICPFilter />
-      <CoreInsight />
-      <Method />
-      <Stats />
-      <Offer />
-      <Deliverables />
-      <SocialProof />
-      <Proof />
-      <RiskReversal />
-      <About />
-      <BottomCTA />
-      <Newsletter />
+      <a href="#main-content" className="sr-only focus:not-sr-only">Skip to main content</a>
+      <Navbar />
+      <header role="banner">
+        <Hero />
+      </header>
+      <main id="main-content" role="main">
+        <Problem />
+        <ICPFilter />
+        <Method />
+        <Stats />
+        <Offer />
+        <Deliverables />
+        <SocialProof />
+        <Testimonials />
+        <RiskReversal />
+        <About />
+        <BottomCTA />
+        <Newsletter />
+      </main>
       <Footer />
+      <CookieConsent />
     </>
   )
 }

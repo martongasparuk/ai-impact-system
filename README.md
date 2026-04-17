@@ -1,16 +1,62 @@
-# React + Vite
+# AI IMPACT — AI Strategy Consulting
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A single-page marketing site for AI strategy consulting services.
 
-Currently, two official plugins are available:
+## Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **React 19** + **Vite 8**
+- **Tailwind CSS 4** for styling
+- **Lucide React** for icons
 
-## React Compiler
+## Getting Started
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+# Install dependencies
+npm install
 
-## Expanding the ESLint configuration
+# Start development server
+npm run dev
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+```
+
+## Environment Variables
+
+Copy `.env.example` to `.env` and fill in your values:
+
+```bash
+cp .env.example .env
+```
+
+| Variable | Description |
+|----------|-------------|
+| `VITE_CALENDLY_URL` | Your Calendly booking link |
+| `VITE_CONTACT_EMAIL` | Contact email address |
+
+## Project Structure
+
+```
+src/
+  App.jsx        — All page sections and components
+  App.css        — Tailwind base (minimal)
+  main.jsx       — React entry point
+public/
+  privacy.html   — Privacy policy page
+  terms.html     — Terms of service page
+```
+
+## Deployment
+
+Build with `npm run build` and deploy the `dist/` directory to any static hosting provider (Vercel, Netlify, Cloudflare Pages, etc.).
+
+For Vercel: connect the repo and it auto-detects Vite. No extra config needed.
+
+## Lint
+
+```bash
+npm run lint
+```
