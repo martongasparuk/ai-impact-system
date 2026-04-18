@@ -28,7 +28,7 @@ import './App.css'
 const REVEAL_THRESHOLD = 0.12
 const CALENDLY_URL = import.meta.env.VITE_CALENDLY_URL || 'https://calendly.com/martongaspar/30min'
 const CONTACT_EMAIL = import.meta.env.VITE_CONTACT_EMAIL || 'marton.gaspar.uk@gmail.com'
-const BEEHIIV_EMBED_URL = import.meta.env.VITE_BEEHIIV_EMBED_URL || ''
+const BEEHIIV_URL = 'https://aiimpactsystem.beehiiv.com/subscribe'
 
 /* ─── scroll-reveal hook ─── */
 function useReveal() {
@@ -676,8 +676,6 @@ function BottomCTA() {
 
 /* ─── NEWSLETTER ─── */
 function Newsletter() {
-  if (!BEEHIIV_EMBED_URL) return null
-
   return (
     <section className="py-16 relative">
       <div className="absolute inset-0 bg-dark-800/30 border-y border-dark-600/20" />
@@ -685,16 +683,15 @@ function Newsletter() {
         <Reveal>
           <p className="text-white font-semibold text-lg mb-2">Get AI strategy insights</p>
           <p className="text-gray-400 text-sm mb-6">No fluff. Just clarity on making AI work for your business.</p>
-          <iframe
-            src={BEEHIIV_EMBED_URL}
-            data-test-id="beehiiv-embed"
-            width="100%"
-            height="52"
-            frameBorder="0"
-            scrolling="no"
-            title="Subscribe to newsletter"
-            className="rounded-lg"
-          />
+          <a
+            href={BEEHIIV_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 bg-accent-500 hover:bg-accent-600 text-white font-semibold rounded-lg px-6 py-3 text-sm transition-all duration-300 hover:shadow-[0_0_20px_rgba(99,102,241,0.3)]"
+          >
+            Subscribe
+            <ArrowRight className="w-4 h-4" />
+          </a>
         </Reveal>
       </div>
     </section>
