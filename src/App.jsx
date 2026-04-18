@@ -652,6 +652,70 @@ function About() {
   )
 }
 
+/* ─── FAQ ─── */
+const FAQ_ITEMS = [
+  {
+    q: 'What is the AI IMPACT System?',
+    a: 'A six-step framework that helps companies turn scattered AI activity into clear, measurable business impact in 10 days. It covers identifying real opportunities, mapping existing work, prioritising the bets that matter, agreeing on success criteria, making stop/continue/scale decisions, and building a leadership-ready narrative.',
+  },
+  {
+    q: 'Who is this for?',
+    a: 'Leaders who are responsible for AI direction or outcomes — typically C-suite, VPs, or directors at companies where AI work is already happening but the impact is unclear. If you are being asked what AI is delivering and don\'t have a clean answer, this is for you.',
+  },
+  {
+    q: 'How long does the engagement take?',
+    a: 'Ten days. It is a focused sprint, not a long transformation programme. You walk away with a clear view of all AI work, the top 1–3 bets that matter, defined success metrics, a decision framework, and a leadership-ready narrative.',
+  },
+  {
+    q: 'What do I get at the end?',
+    a: 'Three key deliverables: an AI Opportunity Map showing what exists and what matters, Success Criteria with measurable outcomes tied to business metrics, and an Executive Narrative ready for board and leadership discussions.',
+  },
+  {
+    q: 'How is this different from other AI consulting?',
+    a: 'This is not about tools or technology. It is about helping leadership make better decisions, focus effort where it matters, and explain AI in terms the business understands. The focus is on outcomes and clarity, not activity.',
+  },
+]
+
+function FAQ() {
+  const [open, setOpen] = useState(null)
+
+  return (
+    <section className="py-16 lg:py-20 relative">
+      <div className="absolute inset-0 bg-gradient-to-b from-dark-900 via-dark-950 to-dark-900" />
+      <div className="relative z-10 max-w-3xl mx-auto px-6 lg:px-8">
+        <Reveal>
+          <p className="text-accent-400 font-semibold text-sm uppercase tracking-wider mb-4 text-center">FAQ</p>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-white leading-tight mb-10 text-center">
+            Common questions
+          </h2>
+        </Reveal>
+
+        <div className="space-y-3">
+          {FAQ_ITEMS.map((item, i) => (
+            <Reveal key={i} delay={i * 60}>
+              <div className="bg-dark-800/50 border border-dark-600/40 rounded-xl overflow-hidden">
+                <button
+                  onClick={() => setOpen(open === i ? null : i)}
+                  className="w-full flex items-center justify-between gap-4 p-5 text-left"
+                  aria-expanded={open === i}
+                >
+                  <span className="text-white font-semibold">{item.q}</span>
+                  <ChevronRight className={`w-5 h-5 text-accent-400 shrink-0 transition-transform duration-200 ${open === i ? 'rotate-90' : ''}`} />
+                </button>
+                {open === i && (
+                  <div className="px-5 pb-5 text-gray-400 text-sm leading-relaxed">
+                    {item.a}
+                  </div>
+                )}
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
 /* ─── BOTTOM CTA ─── */
 function BottomCTA() {
   return (
@@ -982,6 +1046,7 @@ export default function App() {
         <Testimonials />
         <RiskReversal />
         <About />
+        <FAQ />
         <BottomCTA />
         <Newsletter />
       </main>
