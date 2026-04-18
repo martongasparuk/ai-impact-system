@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import {
   ArrowRight,
-  Target,
   Map,
   Filter,
   Handshake,
@@ -107,9 +106,7 @@ function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-8 flex items-center justify-between h-16">
         <a href="#" className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-accent-400/10 flex items-center justify-center">
-            <Target className="w-4 h-4 text-accent-400" />
-          </div>
+          <img src="/logo-icon.png" alt="" className="w-8 h-8" />
           <span className="text-white font-bold text-lg">AI IMPACT</span>
         </a>
 
@@ -706,9 +703,7 @@ function Footer() {
       <div className="relative z-10 max-w-5xl mx-auto px-6 lg:px-8">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-accent-400/10 flex items-center justify-center">
-              <Target className="w-4 h-4 text-accent-400" />
-            </div>
+            <img src="/logo-icon.png" alt="" className="w-8 h-8" />
             <span className="text-white font-bold text-lg">AI IMPACT</span>
           </div>
 
