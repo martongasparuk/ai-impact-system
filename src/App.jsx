@@ -28,6 +28,7 @@ const REVEAL_THRESHOLD = 0.12
 const CALENDLY_URL = import.meta.env.VITE_CALENDLY_URL || 'https://calendly.com/martongaspar/30min'
 const CONTACT_EMAIL = import.meta.env.VITE_CONTACT_EMAIL || 'marton.gaspar.uk@gmail.com'
 const BEEHIIV_URL = 'https://aiimpactsystem.beehiiv.com/subscribe'
+const BEEHIIV_EMBED_URL = import.meta.env.VITE_BEEHIIV_EMBED_URL || ''
 
 /* ─── scroll-reveal hook ─── */
 function useReveal() {
@@ -677,6 +678,20 @@ function BottomCTA() {
 
 /* ─── NEWSLETTER ─── */
 function Newsletter() {
+  const [email, setEmail] = useState('')
+  const [status, setStatus] = useState('idle') // idle | submitting | success | error
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    if (!email) return
+    setStatus('submitting')
+    // Open Beehiiv subscribe with email pre-filled, then show success
+    window.open(`${BEEHIIV_URL}?email=${encodeURIComponent(email)}`, '_blank', 'noopener,noreferrer')
+    setStatus('success')
+    setEmail('')
+    setTimeout(() => setStatus('idle'), 5000)
+  }
+
   return (
     <section className="py-16 relative">
       <div className="absolute inset-0 bg-dark-800/30 border-y border-dark-600/20" />
@@ -684,15 +699,48 @@ function Newsletter() {
         <Reveal>
           <p className="text-white font-semibold text-lg mb-2">Get AI strategy insights</p>
           <p className="text-gray-400 text-sm mb-6">No fluff. Just clarity on making AI work for your business.</p>
-          <a
-            href={BEEHIIV_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 bg-accent-500 hover:bg-accent-600 text-white font-semibold rounded-lg px-6 py-3 text-sm transition-all duration-300 hover:shadow-[0_0_20px_rgba(99,102,241,0.3)]"
-          >
-            Subscribe
-            <ArrowRight className="w-4 h-4" />
-          </a>
+
+          {BEEHIIV_EMBED_URL ? (
+            <iframe
+              src={BEEHIIV_EMBED_URL}
+              data-test-id="beehiiv-embed"
+              width="100%"
+              height="320"
+              frameBorder="0"
+              scrolling="no"
+              title="Newsletter subscribe"
+              className="rounded-lg"
+              style={{ background: 'transparent' }}
+            />
+          ) : (
+            <>
+              {status === 'success' ? (
+                <div className="flex items-center justify-center gap-2 text-accent-400 font-semibold py-3">
+                  <CheckCircle2 className="w-5 h-5" />
+                  <span>Check the Beehiiv tab to confirm your subscription!</span>
+                </div>
+              ) : (
+                <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter your email"
+                    required
+                    className="flex-1 bg-dark-800 border border-dark-600 rounded-lg px-4 py-3 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-accent-400 focus:ring-1 focus:ring-accent-400 transition-colors"
+                  />
+                  <button
+                    type="submit"
+                    disabled={status === 'submitting'}
+                    className="inline-flex items-center justify-center gap-2 bg-accent-500 hover:bg-accent-600 text-white font-semibold rounded-lg px-6 py-3 text-sm transition-all duration-300 hover:shadow-[0_0_20px_rgba(99,102,241,0.3)] disabled:opacity-60 whitespace-nowrap"
+                  >
+                    Subscribe
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </form>
+              )}
+            </>
+          )}
         </Reveal>
       </div>
     </section>
