@@ -106,7 +106,11 @@ function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-8 flex items-center justify-between h-16">
         <a href="#" className="flex items-center gap-2.5">
-          <img src="/logo-icon.png" alt="" className="w-8 h-8" />
+          <picture>
+            <source srcSet="/logo-icon.avif" type="image/avif" />
+            <source srcSet="/logo-icon.webp" type="image/webp" />
+            <img src="/logo-icon.png" alt="AI IMPACT System logo" className="w-8 h-8" width="32" height="32" />
+          </picture>
           <span className="text-white font-bold text-lg">AI IMPACT</span>
         </a>
 
@@ -703,7 +707,11 @@ function Footer() {
       <div className="relative z-10 max-w-5xl mx-auto px-6 lg:px-8">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-3">
-            <img src="/logo-icon.png" alt="" className="w-8 h-8" />
+            <picture>
+              <source srcSet="/logo-icon.avif" type="image/avif" />
+              <source srcSet="/logo-icon.webp" type="image/webp" />
+              <img src="/logo-icon.png" alt="AI IMPACT System logo" className="w-8 h-8" width="32" height="32" />
+            </picture>
             <span className="text-white font-bold text-lg">AI IMPACT</span>
           </div>
 

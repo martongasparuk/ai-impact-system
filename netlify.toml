@@ -1,0 +1,35 @@
+# example netlify.toml
+[build]
+  command = "npm run build "
+  functions = "netlify/functions"
+  publish = "dist"
+
+  ## SPA catch-all redirect — serves index.html for any unknown URL so the React
+  ## router-less SPA handles direct navigation correctly. (After SSG migration
+  ## this mostly affects stray URLs; safe to keep.)
+  [[redirects]]
+    from = "/*"
+    to = "/index.html"
+    status = 200
+
+  ## (optional) Settings for Netlify Dev
+  ## https://github.com/netlify/cli/blob/main/docs/netlify-dev.md#project-detection
+  #[dev]
+  #  command = "yarn start" # Command to start your dev server
+  #  port = 3000 # Port that the dev server will be listening on
+  #  publish = "dist" # Folder with the static content for _redirect file
+
+  ## more info on configuring this file: https://ntl.fyi/file-based-build-config
+
+## Security headers applied to every response.
+## TODO: add a Content-Security-Policy once the Calendly widget, Google Fonts,
+## and any analytics have been tested end-to-end. A broken CSP will silently
+## kill the booking flow, so it's intentionally omitted here.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "SAMEORIGIN"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), interest-cohort=()"
