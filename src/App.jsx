@@ -28,6 +28,7 @@ import './App.css'
 const REVEAL_THRESHOLD = 0.12
 const CALENDLY_URL = import.meta.env.VITE_CALENDLY_URL || 'https://calendly.com/martongaspar/30min'
 const CONTACT_EMAIL = import.meta.env.VITE_CONTACT_EMAIL || 'marton.gaspar.uk@gmail.com'
+const BEEHIIV_EMBED_URL = import.meta.env.VITE_BEEHIIV_EMBED_URL || ''
 
 /* ─── scroll-reveal hook ─── */
 function useReveal() {
@@ -675,16 +676,7 @@ function BottomCTA() {
 
 /* ─── NEWSLETTER ─── */
 function Newsletter() {
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    const input = e.target.elements.email
-    if (!input.value || !input.validity.valid) {
-      input.setCustomValidity('Please enter a valid email address')
-      input.reportValidity()
-      return
-    }
-    input.setCustomValidity('')
-  }
+  if (!BEEHIIV_EMBED_URL) return null
 
   return (
     <section className="py-16 relative">
@@ -693,24 +685,16 @@ function Newsletter() {
         <Reveal>
           <p className="text-white font-semibold text-lg mb-2">Get AI strategy insights</p>
           <p className="text-gray-400 text-sm mb-6">No fluff. Just clarity on making AI work for your business.</p>
-          <form className="flex gap-3 max-w-md mx-auto" onSubmit={handleSubmit}>
-            <label htmlFor="newsletter-email" className="sr-only">Email address</label>
-            <input
-              id="newsletter-email"
-              name="email"
-              type="email"
-              required
-              placeholder="your@email.com"
-              className="flex-1 bg-dark-700/60 border border-dark-600/50 rounded-lg px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none focus:border-accent-400/50 transition-colors"
-              onInput={(e) => e.target.setCustomValidity('')}
-            />
-            <button
-              type="submit"
-              className="bg-accent-500 hover:bg-accent-600 text-white font-semibold rounded-lg px-6 py-3 text-sm transition-all duration-300 hover:shadow-[0_0_20px_rgba(99,102,241,0.3)] whitespace-nowrap"
-            >
-              Subscribe
-            </button>
-          </form>
+          <iframe
+            src={BEEHIIV_EMBED_URL}
+            data-test-id="beehiiv-embed"
+            width="100%"
+            height="52"
+            frameBorder="0"
+            scrolling="no"
+            title="Subscribe to newsletter"
+            className="rounded-lg"
+          />
         </Reveal>
       </div>
     </section>
@@ -887,7 +871,7 @@ function CookieConsent() {
     <div role="dialog" aria-label="Cookie consent" className="fixed bottom-0 inset-x-0 z-50 bg-dark-800 border-t border-dark-600 px-6 py-4">
       <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center gap-4 text-sm">
         <p className="text-gray-300">
-          This site uses third-party services (Calendly, Google Fonts) that may set cookies.{' '}
+          This site uses third-party services (Calendly) that may set cookies.{' '}
           <a href="/privacy.html" className="text-accent-400 hover:underline">Privacy Policy</a>
         </p>
         <div className="flex gap-3 shrink-0">
