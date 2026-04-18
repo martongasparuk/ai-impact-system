@@ -762,6 +762,7 @@ function SocialProof() {
                 key={l.name}
                 src={l.src}
                 alt={l.name}
+                loading="lazy"
                 className={`${l.h} w-auto brightness-0 invert opacity-70`}
               />
             ))}
