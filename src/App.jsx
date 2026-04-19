@@ -106,13 +106,12 @@ function Navbar() {
       }`}
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-8 flex items-center justify-between h-16">
-        <a href="#" className="flex items-center gap-2.5">
+        <a href="#" className="flex items-center">
           <picture>
-            <source srcSet="/logo-icon.avif" type="image/avif" />
-            <source srcSet="/logo-icon.webp" type="image/webp" />
-            <img src="/logo-icon.png" alt="AI IMPACT System logo" className="w-8 h-8" width="32" height="32" />
+            <source srcSet="/logo-full.avif" type="image/avif" />
+            <source srcSet="/logo-full.webp" type="image/webp" />
+            <img src="/logo-full.png" alt="AI IMPACT System logo" className="h-10" width="190" height="100" />
           </picture>
-          <span className="text-white font-bold text-lg">AI IMPACT</span>
         </a>
 
         {/* desktop links */}
@@ -407,7 +406,7 @@ function Method() {
     { icon: Map, letter: 'M', word: 'Map', desc: 'Get a clear view of what exists, who owns it, and what it\'s doing' },
     { icon: Filter, letter: 'P', word: 'Prioritise', desc: 'Focus on the few bets that actually matter' },
     { icon: Handshake, letter: 'A', word: 'Agree', desc: 'Define success upfront with clear criteria and baselines' },
-    { icon: Zap, letter: 'C', word: 'Call', desc: 'Stop, continue, or scale -based on evidence' },
+    { icon: Zap, letter: 'C', word: 'Call', desc: 'Stop, continue, or scale based on evidence' },
     { icon: MessageSquare, letter: 'T', word: 'Tell', desc: 'Give leadership a clear, defensible narrative' },
   ]
 
@@ -483,8 +482,11 @@ function Offer() {
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white leading-tight mb-3">
               10-Day AI Strategy Intensive
             </h2>
-            <p className="text-lg text-gray-400 mb-10 max-w-2xl">
+            <p className="text-lg text-gray-400 mb-4 max-w-2xl">
               A focused sprint to turn AI activity into a clear, defensible strategy.
+            </p>
+            <p className="text-xl lg:text-2xl text-white font-bold mb-10 max-w-2xl">
+              I'll find you £100,000 worth of annual savings or improvements during the ten day assignment or you don't pay.
             </p>
           </Reveal>
 
@@ -660,11 +662,11 @@ const FAQ_ITEMS = [
   },
   {
     q: 'Who is this for?',
-    a: 'Leaders who are responsible for AI direction or outcomes — typically C-suite, VPs, or directors at companies where AI work is already happening but the impact is unclear. If you are being asked what AI is delivering and don\'t have a clean answer, this is for you.',
+    a: 'Leaders who are responsible for AI direction or outcomes. Typically C-suite, VPs, or directors at companies where AI work is already happening but the impact is unclear. If you are being asked what AI is delivering and don\'t have a clean answer, this is for you.',
   },
   {
     q: 'How long does the engagement take?',
-    a: 'Ten days. It is a focused sprint, not a long transformation programme. You walk away with a clear view of all AI work, the top 1–3 bets that matter, defined success metrics, a decision framework, and a leadership-ready narrative.',
+    a: 'Ten days. It is a focused sprint, not a long transformation programme. You walk away with a clear view of all AI work, the top 1 to 3 bets that matter, defined success metrics, a decision framework, and a leadership-ready narrative.',
   },
   {
     q: 'What do I get at the end?',
@@ -731,7 +733,7 @@ function BottomCTA() {
             Start with a diagnostic
           </h2>
           <p className="text-lg text-gray-400 mb-10 max-w-lg mx-auto">
-            If you're being asked what AI is delivering and don't have a clean answer -start here.
+            If you're being asked what AI is delivering and don't have a clean answer, start here.
           </p>
           <CTAButton large />
         </Reveal>
@@ -744,16 +746,24 @@ function BottomCTA() {
 function Newsletter() {
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState('idle') // idle | submitting | success | error
+  const iframeRef = useRef(null)
+  const formRef = useRef(null)
 
   const handleSubmit = (e) => {
     e.preventDefault()
     if (!email) return
     setStatus('submitting')
-    // Open Beehiiv subscribe with email pre-filled, then show success
-    window.open(`${BEEHIIV_URL}?email=${encodeURIComponent(email)}`, '_blank', 'noopener,noreferrer')
-    setStatus('success')
-    setEmail('')
-    setTimeout(() => setStatus('idle'), 5000)
+
+    // Submit to Beehiiv via hidden iframe so user stays on page
+    const iframe = iframeRef.current
+    const onLoad = () => {
+      iframe.removeEventListener('load', onLoad)
+      setStatus('success')
+      setEmail('')
+      setTimeout(() => setStatus('idle'), 5000)
+    }
+    iframe.addEventListener('load', onLoad)
+    formRef.current.submit()
   }
 
   return (
@@ -763,6 +773,9 @@ function Newsletter() {
         <Reveal>
           <p className="text-white font-semibold text-lg mb-2">Get AI strategy insights</p>
           <p className="text-gray-400 text-sm mb-6">No fluff. Just clarity on making AI work for your business.</p>
+
+          {/* Hidden iframe target for form submission */}
+          <iframe ref={iframeRef} name="beehiiv-hidden" title="Newsletter submit" className="hidden" aria-hidden="true" />
 
           {BEEHIIV_EMBED_URL ? (
             <iframe
@@ -781,12 +794,20 @@ function Newsletter() {
               {status === 'success' ? (
                 <div className="flex items-center justify-center gap-2 text-accent-400 font-semibold py-3">
                   <CheckCircle2 className="w-5 h-5" />
-                  <span>Check the Beehiiv tab to confirm your subscription!</span>
+                  <span>You're subscribed! Check your inbox to confirm.</span>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+                <form
+                  ref={formRef}
+                  onSubmit={handleSubmit}
+                  action={BEEHIIV_URL}
+                  method="POST"
+                  target="beehiiv-hidden"
+                  className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
+                >
                   <input
                     type="email"
+                    name="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Enter your email"
@@ -798,7 +819,7 @@ function Newsletter() {
                     disabled={status === 'submitting'}
                     className="inline-flex items-center justify-center gap-2 bg-accent-500 hover:bg-accent-600 text-white font-semibold rounded-lg px-6 py-3 text-sm transition-all duration-300 hover:shadow-[0_0_20px_rgba(99,102,241,0.3)] disabled:opacity-60 whitespace-nowrap"
                   >
-                    Subscribe
+                    {status === 'submitting' ? 'Subscribing...' : 'Subscribe'}
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </form>
@@ -818,13 +839,12 @@ function Footer() {
       <div className="absolute inset-0 bg-dark-950 border-t border-dark-600/20" />
       <div className="relative z-10 max-w-5xl mx-auto px-6 lg:px-8">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center">
             <picture>
-              <source srcSet="/logo-icon.avif" type="image/avif" />
-              <source srcSet="/logo-icon.webp" type="image/webp" />
-              <img src="/logo-icon.png" alt="AI IMPACT System logo" className="w-8 h-8" width="32" height="32" />
+              <source srcSet="/logo-full.avif" type="image/avif" />
+              <source srcSet="/logo-full.webp" type="image/webp" />
+              <img src="/logo-full.png" alt="AI IMPACT System logo" className="h-10" width="190" height="100" />
             </picture>
-            <span className="text-white font-bold text-lg">AI IMPACT</span>
           </div>
 
           <nav aria-label="Footer" className="flex flex-wrap gap-x-8 gap-y-2 text-sm text-gray-400">
