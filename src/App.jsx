@@ -128,9 +128,8 @@ function Navbar() {
       <div className="max-w-7xl mx-auto px-6 lg:px-8 flex items-center justify-between h-16">
         <a href="#" className="flex items-center">
           <picture>
-            <source srcSet="/logo-full.avif" type="image/avif" />
             <source srcSet="/logo-full.webp" type="image/webp" />
-            <img src="/logo-full.png" alt="AI IMPACT System logo" className="h-10" width="190" height="100" />
+            <img src="/logo-full.png" alt="AI IMPACT System logo" className="h-14 w-auto" />
           </picture>
         </a>
 
