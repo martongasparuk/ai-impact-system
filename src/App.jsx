@@ -23,6 +23,26 @@ import {
 } from 'lucide-react'
 import './App.css'
 
+/* ─── ERROR BOUNDARY ─── */
+class ErrorBoundary extends React.Component {
+  state = { hasError: false }
+  static getDerivedStateFromError() { return { hasError: true } }
+  componentDidCatch(error, info) { console.error('React error boundary caught:', error, info) }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0a0a0f', color: '#d1d5db', fontFamily: 'system-ui, sans-serif', textAlign: 'center', padding: '2rem' }}>
+          <div>
+            <h1 style={{ color: '#fff', fontSize: '1.5rem', marginBottom: '0.5rem' }}>Something went wrong</h1>
+            <p>Please refresh the page to try again.</p>
+          </div>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
+
 /* ─── constants ─── */
 const REVEAL_THRESHOLD = 0.12
 const CALENDLY_URL = import.meta.env.VITE_CALENDLY_URL || 'https://calendly.com/martongaspar/30min'
@@ -822,6 +842,10 @@ function Newsletter() {
                     {status === 'submitting' ? 'Subscribing...' : 'Subscribe'}
                     <ArrowRight className="w-4 h-4" />
                   </button>
+                  <label className="flex items-start gap-2 text-xs text-gray-400 mt-2 sm:col-span-2">
+                    <input type="checkbox" required className="mt-0.5 accent-accent-500" />
+                    <span>I agree to the <a href="/privacy.html" className="text-accent-400 hover:underline">Privacy Policy</a></span>
+                  </label>
                 </form>
               )}
             </>
@@ -876,8 +900,8 @@ function Footer() {
 /* ─── SOCIAL PROOF ─── */
 function SocialProof() {
   const imageBrands = [
-    { name: 'Microsoft', src: '/logos/microsoft.svg', h: 'h-7' },
-    { name: 'IBM', src: '/logos/ibm.svg', h: 'h-6' },
+    { name: 'Microsoft', src: '/logos/microsoft.svg', h: 'h-7', w: 120, hPx: 28 },
+    { name: 'IBM', src: '/logos/ibm.svg', h: 'h-6', w: 60, hPx: 24 },
   ]
   const textBrands = ['Netflix', 'Amazon', 'eBay', 'BCG', 'EY', 'NHS', 'Edelman', 'Mindshare']
 
@@ -897,6 +921,8 @@ function SocialProof() {
                 key={l.name}
                 src={l.src}
                 alt={l.name}
+                width={l.w}
+                height={l.hPx}
                 loading="lazy"
                 className={`${l.h} w-auto brightness-0 invert opacity-70`}
               />
@@ -990,13 +1016,13 @@ function Testimonials() {
 /* ─── COOKIE CONSENT ─── */
 function CookieConsent() {
   const [visible, setVisible] = React.useState(() => {
-    try { return !localStorage.getItem('cookie-consent') } catch { return true }
+    try { return !localStorage.getItem('cookie-consent') } catch (err) { console.warn('Cookie consent read failed:', err); return true }
   })
 
   if (!visible) return null
 
   const dismiss = (choice) => {
-    try { localStorage.setItem('cookie-consent', choice) } catch {}
+    try { localStorage.setItem('cookie-consent', choice) } catch (err) { console.warn('Cookie consent save failed:', err) }
     setVisible(false)
   }
 
@@ -1029,7 +1055,7 @@ function CookieConsent() {
 /* ─── APP ─── */
 export default function App() {
   return (
-    <>
+    <ErrorBoundary>
       <style>{`
         .reveal-item {
           opacity: 0;
@@ -1072,6 +1098,6 @@ export default function App() {
       </main>
       <Footer />
       <CookieConsent />
-    </>
+    </ErrorBoundary>
   )
 }
