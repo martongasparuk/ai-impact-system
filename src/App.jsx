@@ -205,13 +205,6 @@ function Hero() {
           {/* left */}
           <div>
             <Reveal>
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-accent-400/20 bg-accent-400/5 text-accent-500 text-sm font-medium mb-8">
-                <span className="w-2 h-2 rounded-full bg-accent-400 animate-pulse" />
-                AI Strategy for Leaders Under Pressure
-              </div>
-            </Reveal>
-
-            <Reveal delay={100}>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-[1.08] tracking-tight mb-6">
                 You're being asked what AI is delivering.{' '}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent-400 to-cyan-400">
