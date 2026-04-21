@@ -1,11 +1,13 @@
 // AI Impact Scorecard — result page at /audit/result
-// Phase 2 minimal result (score + band + verdict). Phase 3 adds radar chart + email capture + proper design.
+// Phase 3: radar chart + email capture + Cal.com CTA + proper layout.
 
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { calculateScorecard, type Answers } from './scoring';
 import { generateReport } from './report';
-import { pillarOrder } from './questions';
+import RadarChart from './RadarChart';
+import EmailCaptureForm from './EmailCaptureForm';
+import DiagnosticCallCTA from './DiagnosticCallCTA';
 
 const STORAGE_KEY = 'ais-scorecard-answers-v1';
 
@@ -38,7 +40,7 @@ export default function ResultPage() {
     return generateReport(scorecard);
   }, [scorecard]);
 
-  if (!scorecard || !report) {
+  if (!scorecard || !report || !answers) {
     return (
       <div className="min-h-screen bg-dark-950 text-gray-400 flex items-center justify-center">
         <p className="text-sm">Loading your result…</p>
@@ -46,19 +48,19 @@ export default function ResultPage() {
     );
   }
 
-  const bandColor =
+  const bandAccent =
     scorecard.band.name === 'Exposed'
-      ? 'text-red-400'
+      ? 'text-red-400 border-red-500/40 bg-red-500/5'
       : scorecard.band.name === 'Reactive'
-      ? 'text-orange-400'
+      ? 'text-orange-400 border-orange-500/40 bg-orange-500/5'
       : scorecard.band.name === 'Directional'
-      ? 'text-accent-400'
-      : 'text-cyan-400';
+      ? 'text-accent-400 border-accent-500/40 bg-accent-500/5'
+      : 'text-cyan-400 border-cyan-500/40 bg-cyan-500/5';
 
   return (
     <div className="min-h-screen bg-dark-950 text-gray-200 font-sans antialiased">
       <header className="border-b border-dark-700">
-        <div className="max-w-3xl mx-auto px-6 py-5 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-6 py-5 flex items-center justify-between">
           <a href="/" className="text-white font-bold tracking-tight text-lg">
             AI Impact System
           </a>
@@ -68,65 +70,39 @@ export default function ResultPage() {
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-6 pt-16 pb-24">
-        {/* Score block */}
-        <div className="mb-12">
-          <p className="text-xs uppercase tracking-[0.22em] text-gray-500 font-semibold mb-4">
-            Your AI Strategy Gap Score
-          </p>
-          <div className="flex items-baseline gap-3 mb-2">
-            <span className="text-7xl font-black text-white">
-              {scorecard.normalisedScore}
-            </span>
-            <span className="text-3xl text-gray-600 font-bold">/ 100</span>
+      <main className="max-w-5xl mx-auto px-6 pt-12 pb-24">
+        {/* ── Headline row: score + radar ── */}
+        <section className="grid lg:grid-cols-2 gap-10 mb-16 items-center">
+          <div>
+            <p className="text-xs uppercase tracking-[0.22em] text-gray-500 font-semibold mb-4">
+              Your AI Strategy Gap Score
+            </p>
+            <div className="flex items-baseline gap-3 mb-3">
+              <span className="text-[88px] leading-none font-black text-white">
+                {scorecard.normalisedScore}
+              </span>
+              <span className="text-3xl text-gray-600 font-bold">/ 100</span>
+            </div>
+            <div
+              className={`inline-block px-4 py-2 rounded-md border text-lg font-bold mb-6 ${bandAccent}`}
+            >
+              {scorecard.band.name}
+            </div>
+            <p className="text-xl text-white leading-relaxed">{report.verdict}</p>
           </div>
-          <p className={`text-2xl font-bold ${bandColor}`}>{scorecard.band.name}</p>
-        </div>
 
-        {/* Pillar bars (temp radar replacement until Phase 3) */}
-        <section className="mb-14">
-          <p className="text-xs uppercase tracking-[0.22em] text-gray-500 font-semibold mb-5">
-            Pillar breakdown
-          </p>
-          <div className="space-y-3">
-            {pillarOrder.map((p) => {
-              const score = scorecard.pillarScores[p];
-              const pct = (score / 4) * 100;
-              const strong = scorecard.strongestPillars.includes(p);
-              const weak = scorecard.weakestPillars.includes(p);
-              return (
-                <div key={p} className="flex items-center gap-4">
-                  <span className="w-24 text-sm font-semibold text-white">{p}</span>
-                  <div className="flex-1 h-2.5 bg-dark-700 rounded overflow-hidden">
-                    <div
-                      className={
-                        strong
-                          ? 'h-full bg-cyan-500'
-                          : weak
-                          ? 'h-full bg-red-500/70'
-                          : 'h-full bg-accent-500'
-                      }
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                  <span className="w-12 text-right text-xs text-gray-500 font-mono">
-                    {score.toFixed(1)} / 4
-                  </span>
-                </div>
-              );
-            })}
+          <div className="flex items-center justify-center">
+            <RadarChart
+              scores={scorecard.pillarScores}
+              strongestPillars={scorecard.strongestPillars}
+              weakestPillars={scorecard.weakestPillars}
+              size={360}
+            />
           </div>
         </section>
 
-        {/* Verdict */}
-        <section className="mb-10">
-          <p className="text-xs uppercase tracking-[0.22em] text-accent-400 font-semibold mb-3">
-            The verdict
-          </p>
-          <p className="text-xl text-white leading-relaxed">{report.verdict}</p>
-        </section>
-
-        <section className="mb-10">
+        {/* ── What your answers suggest ── */}
+        <section className="mb-10 max-w-3xl">
           <p className="text-xs uppercase tracking-[0.22em] text-gray-500 font-semibold mb-3">
             What your answers suggest
           </p>
@@ -135,15 +111,16 @@ export default function ResultPage() {
           </p>
         </section>
 
-        <section className="mb-10 p-6 bg-dark-800 border border-dark-600 rounded-lg">
+        {/* ── Money on the table ── */}
+        <section className="mb-12 p-6 bg-dark-800 border border-dark-600 rounded-lg max-w-3xl">
           <p className="text-xs uppercase tracking-[0.22em] text-accent-400 font-semibold mb-3">
             Money on the table
           </p>
           <p className="text-gray-200 leading-relaxed">{report.moneyOnTable}</p>
         </section>
 
-        {/* CTA */}
-        <section className="mb-12">
+        {/* ── What happens next + CTA ── */}
+        <section className="mb-12 max-w-3xl">
           <p className="text-xs uppercase tracking-[0.22em] text-gray-500 font-semibold mb-3">
             What happens next
           </p>
@@ -151,12 +128,10 @@ export default function ResultPage() {
             {report.whatHappensNext}
           </p>
 
-          <a
-            href="#book-call"
-            className="inline-flex items-center gap-2 bg-accent-500 hover:bg-accent-600 text-white font-semibold px-7 py-4 rounded-lg text-base transition-colors"
-          >
-            {report.primaryCta.label}
-          </a>
+          <DiagnosticCallCTA
+            label={report.primaryCta.label}
+            route={report.primaryCta.action}
+          />
 
           {report.closingNote && (
             <p className="text-sm text-gray-500 mt-6 leading-relaxed italic">
@@ -165,9 +140,18 @@ export default function ResultPage() {
           )}
         </section>
 
-        {/* Start over */}
-        <section className="pt-10 border-t border-dark-700 flex items-center justify-between text-sm text-gray-500">
-          <span>Score: {scorecard.rawScore}/96 raw · {scorecard.salesTriggerCount} help-flags</span>
+        {/* ── Email capture ── */}
+        <section className="mb-12 max-w-3xl">
+          <EmailCaptureForm scorecard={scorecard} answers={answers} />
+        </section>
+
+        {/* ── Retake / stats ── */}
+        <section className="pt-10 border-t border-dark-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-sm text-gray-500">
+          <span>
+            Score: {scorecard.rawScore}/96 raw ·{' '}
+            {scorecard.salesTriggerCount} help-flags ·{' '}
+            {scorecard.band.name}
+          </span>
           <button
             type="button"
             onClick={() => {
