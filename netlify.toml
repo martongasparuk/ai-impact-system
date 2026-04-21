@@ -1,25 +1,20 @@
-# example netlify.toml
+# Netlify config for ai-impact-system
 [build]
-  command = "npm run build "
+  command = "npm run build"
   functions = "netlify/functions"
   publish = "dist"
 
-  ## SPA catch-all redirect — serves index.html for any unknown URL so the React
-  ## router-less SPA handles direct navigation correctly. (After SSG migration
-  ## this mostly affects stray URLs; safe to keep.)
+  ## SPA catch-all redirect for client-side routing.
+  ## /api/* is handled before this by the redirect below.
+  [[redirects]]
+    from = "/api/scorecard-submit"
+    to = "/.netlify/functions/scorecard-submit"
+    status = 200
+
   [[redirects]]
     from = "/*"
     to = "/index.html"
     status = 200
-
-  ## (optional) Settings for Netlify Dev
-  ## https://github.com/netlify/cli/blob/main/docs/netlify-dev.md#project-detection
-  #[dev]
-  #  command = "yarn start" # Command to start your dev server
-  #  port = 3000 # Port that the dev server will be listening on
-  #  publish = "dist" # Folder with the static content for _redirect file
-
-  ## more info on configuring this file: https://ntl.fyi/file-based-build-config
 
 ## Security headers applied to every response.
 [[headers]]
@@ -30,7 +25,7 @@
     X-Frame-Options = "SAMEORIGIN"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=(), interest-cohort=()"
-    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-src embeds.beehiiv.com *.beehiiv.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://aiimpactsystem.beehiiv.com"
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://cal.com; frame-src embeds.beehiiv.com *.beehiiv.com https://cal.com https://*.cal.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://aiimpactsystem.beehiiv.com"
 
 ## Cache headers for static assets (Vite hashed filenames are safe to cache long-term)
 [[headers]]
