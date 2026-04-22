@@ -300,6 +300,38 @@ export default function ScorecardFlow() {
           })}
         </div>
 
+        {/* Conditional free-text input when a ContextQuestion opts in via freeTextOn */}
+        {current.kind === 'context' &&
+          current.question.freeTextOn &&
+          currentAnswer === current.question.freeTextOn && (
+          <div className="mt-5">
+            {current.question.freeTextPrompt && (
+              <label
+                htmlFor={`${current.question.id}-text`}
+                className="block text-sm text-gray-300 mb-2"
+              >
+                {current.question.freeTextPrompt}{' '}
+                <span className="text-gray-500">(optional)</span>
+              </label>
+            )}
+            <textarea
+              id={`${current.question.id}-text`}
+              placeholder={current.question.freeTextPlaceholder}
+              value={state.answers.context[`${current.question.id}_text`] ?? ''}
+              onChange={(e) =>
+                dispatch({
+                  type: 'SELECT_CONTEXT',
+                  questionId: `${current.question.id}_text`,
+                  value: e.target.value,
+                })
+              }
+              rows={3}
+              maxLength={500}
+              className="w-full px-4 py-3 bg-dark-800 border border-dark-600 text-white rounded-lg placeholder-gray-500 focus:outline-none focus:border-accent-500 text-base leading-snug"
+            />
+          </div>
+        )}
+
         <p className="text-xs text-gray-400 mt-6">
           Tip: press{' '}
           <kbd className="px-1.5 py-0.5 bg-dark-800 border border-dark-600 rounded text-gray-400 font-mono">
