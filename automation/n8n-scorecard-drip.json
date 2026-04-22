@@ -1,0 +1,96 @@
+{
+  "name": "AI Impact Scorecard — Drip Sequence",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [100, 300],
+      "name": "Every hour"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceRole",
+        "resource": "row",
+        "operation": "getAll",
+        "table": "scorecard_responses",
+        "returnAll": false,
+        "limit": 50,
+        "filter": "day1_sent_at.is.null",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [300, 200],
+      "name": "Leads needing day 1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "REPLACE_SUPABASE_CRED_ID",
+          "name": "Scorecard Supabase"
+        }
+      },
+      "notes": "Finds leads created >24h ago who have not received the day-1 email yet. In the table, add a day1_sent_at column and filter: created_at<now()-'24h' AND day1_sent_at IS NULL"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://aiimpactsystem.com/api/scorecard-email",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Scorecard-Drip-Token",
+              "value": "={{ $env.SCORECARD_DRIP_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"template\": \"day1\",\n  \"email\": \"{{ $json.email }}\",\n  \"firstName\": \"{{ $json.first_name }}\",\n  \"band\": \"{{ $json.band }}\",\n  \"score\": {{ $json.normalised_score }},\n  \"weakestPillar\": \"Agree\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [500, 200],
+      "name": "Send day 1 email"
+    }
+  ],
+  "connections": {
+    "Every hour": {
+      "main": [
+        [
+          {
+            "node": "Leads needing day 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leads needing day 1": {
+      "main": [
+        [
+          {
+            "node": "Send day 1 email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "_comment": "This is a TEMPLATE showing the day-1 flow. Duplicate the Leads+Send pair for day 3, 5, 7, 14 — each with its own filter (created_at<now()-'Nd' AND dayN_sent_at IS NULL). Add day3_sent_at, day5_sent_at, day7_sent_at, day14_sent_at columns to the scorecard_responses table or use a separate scorecard_drip_log table. See automation/README.md for full setup."
+}
