@@ -13,7 +13,12 @@
       "Bash(node -e \"const l = require\\('lucide-react'\\); console.log\\(Object.keys\\(l\\).filter\\(k => k.toLowerCase\\(\\).includes\\('linkedin'\\)\\).join\\(', '\\)\\)\")",
       "Bash(npx vite:*)",
       "Bash(gh auth:*)",
-      "Bash(git config:*)"
+      "Bash(git config:*)",
+      "Read(//private/tmp/**)",
+      "Bash(rm -rf cv_extract)",
+      "Bash(mkdir -p cv_extract/ai cv_extract/exec)",
+      "Bash(unzip -o -q \"/Users/Marton/Downloads/Cv's in use post PM/AI strategy/Marton Gaspar - AI Strategy Director CV.docx\" -d cv_extract/ai)",
+      "Bash(unzip -o -q \"/Users/Marton/Downloads/Cv's in use post PM/Marton Gaspar Executive Product Leader.docx\" -d cv_extract/exec)"
     ]
   }
 }
