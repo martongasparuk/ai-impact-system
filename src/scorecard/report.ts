@@ -59,7 +59,7 @@ function exposedReport(s: Scorecard): ReportContent {
   return {
     bandName: 'Exposed',
     score: s.normalisedScore,
-    headline: `Your AI Impact Gap Score: ${s.normalisedScore}/100 — Exposed`,
+    headline: `Your AI Impact Gap Score: ${s.normalisedScore}/100. Band: Exposed`,
     verdict:
       "You're spending money on AI. You cannot yet tell anyone what it's returning. That is a Board-level risk wearing a technology badge.",
     whatYourAnswersSuggest: `You are strongest in ${topPillarsText(s)}. You are thin in ${bottomPillarsText(
@@ -78,13 +78,13 @@ function reactiveReport(s: Scorecard): ReportContent {
   return {
     bandName: 'Reactive',
     score: s.normalisedScore,
-    headline: `Your AI Impact Gap Score: ${s.normalisedScore}/100 — Reactive`,
+    headline: `Your AI Impact Gap Score: ${s.normalisedScore}/100. Band: Reactive`,
     verdict:
       'You have AI in the business. You do not have an AI strategy. There is a difference, and it costs money every quarter.',
     whatYourAnswersSuggest: `You are strongest in ${topPillarsText(s)}. You are thin in ${bottomPillarsText(
       s,
     )}. In plain terms: you are running a tool collection, not a portfolio of bets.`,
-    moneyOnTable: `Likely unproductive AI spend: ${wasteRangeText(s)} per year. Companies in your band usually have 2 to 4 initiatives that are quietly failing and at least one that is worth scaling. The question is which.`,
+    moneyOnTable: `Likely unproductive AI spend: ${wasteRangeText(s)} per year. Companies in your band usually have 2 to 4 initiatives that are failing without anyone calling it and at least one that is worth scaling. The question is which.`,
     whatHappensNext:
       'Book a free 30-minute Diagnostic Call. I will tell you which initiatives look dead, which look underrated, and how to re-sequence your quarter in 10 days. You leave with a one-page summary of where to cut and where to double down.',
     primaryCta: ctaForRoute(s.ctaRoute),
@@ -97,7 +97,7 @@ function directionalReport(s: Scorecard): ReportContent {
   return {
     bandName: 'Directional',
     score: s.normalisedScore,
-    headline: `Your AI Impact Gap Score: ${s.normalisedScore}/100 — Directional`,
+    headline: `Your AI Impact Gap Score: ${s.normalisedScore}/100. Band: Directional`,
     verdict:
       "You know what you're doing with AI. The gap is rarely strategy. It is execution discipline. Baselines, kill criteria, and the stop-or-scale muscle.",
     whatYourAnswersSuggest: `Your strongest pillars are ${topPillarsText(s)}. Your thinnest are ${bottomPillarsText(
@@ -105,7 +105,7 @@ function directionalReport(s: Scorecard): ReportContent {
     )}. Decisions are getting made, but without the evidence threshold that makes them defensible next quarter.`,
     moneyOnTable: `For Directional organisations, unproductive spend is smaller in percentage but bigger in absolute terms. You are likely carrying ${wasteRangeText(
       s,
-    )} per year in initiatives that have drifted past their original business case.`,
+    )} per year in initiatives that have moved past their original business case.`,
     whatHappensNext:
       'The Diagnostic Call will either confirm you are close and only need a governance layer, or reveal a quieter gap in how you measure success. Either way, you leave clearer.',
     primaryCta: ctaForRoute(s.ctaRoute),
@@ -118,7 +118,7 @@ function compoundingReport(s: Scorecard): ReportContent {
   return {
     bandName: 'Compounding',
     score: s.normalisedScore,
-    headline: `Your AI Impact Gap Score: ${s.normalisedScore}/100 — Compounding`,
+    headline: `Your AI Impact Gap Score: ${s.normalisedScore}/100. Band: Compounding`,
     verdict:
       'You are in the top 5%. Most of my work is getting people to where you already are.',
     whatYourAnswersSuggest:

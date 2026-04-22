@@ -43,10 +43,10 @@ class ErrorBoundary extends React.Component {
   }
 }
 
+import { CALENDLY_URL, CONTACT_EMAIL } from './config'
+
 /* ─── constants ─── */
 const REVEAL_THRESHOLD = 0.12
-const CALENDLY_URL = import.meta.env.VITE_CALENDLY_URL || 'https://calendly.com/martongaspar/30min'
-const CONTACT_EMAIL = import.meta.env.VITE_CONTACT_EMAIL || 'marton.gaspar.uk@gmail.com'
 const BEEHIIV_URL = 'https://aiimpactsystem.beehiiv.com/subscribe'
 const BEEHIIV_EMBED_URL = import.meta.env.VITE_BEEHIIV_EMBED_URL || ''
 
@@ -129,7 +129,15 @@ function Navbar() {
         <a href="#" className="flex items-center">
           <picture>
             <source srcSet="/logo-full.webp" type="image/webp" />
-            <img src="/logo-full.png" alt="AI IMPACT System logo" className="h-14 w-auto" />
+            <img
+              src="/logo-full.png"
+              alt="AI IMPACT System logo"
+              width="169"
+              height="224"
+              className="h-14 w-auto"
+              loading="eager"
+              fetchPriority="high"
+            />
           </picture>
         </a>
 
@@ -859,7 +867,7 @@ function Footer() {
             <picture>
               <source srcSet="/logo-full.avif" type="image/avif" />
               <source srcSet="/logo-full.webp" type="image/webp" />
-              <img src="/logo-full.png" alt="AI IMPACT System logo" className="h-10" width="190" height="100" />
+              <img src="/logo-full.png" alt="AI IMPACT System logo" className="h-10 w-auto" width="169" height="224" loading="lazy" />
             </picture>
           </div>
 
@@ -872,16 +880,16 @@ function Footer() {
           </nav>
 
           <div className="flex items-center gap-4">
-            <a href="https://www.linkedin.com/in/martongaspar/" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-accent-400 transition-colors" aria-label="LinkedIn profile">
+            <a href="https://www.linkedin.com/in/martongaspar/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-accent-400 transition-colors" aria-label="LinkedIn profile">
               <ExternalLink className="w-5 h-5" />
             </a>
-            <a href={`mailto:${CONTACT_EMAIL}`} className="text-gray-600 hover:text-accent-400 transition-colors" aria-label="Send email">
+            <a href={`mailto:${CONTACT_EMAIL}`} className="text-gray-400 hover:text-accent-400 transition-colors" aria-label="Send email">
               <Mail className="w-5 h-5" />
             </a>
           </div>
         </div>
 
-        <div className="mt-8 pt-6 border-t border-dark-600/20 text-center text-xs text-gray-600">
+        <div className="mt-8 pt-6 border-t border-dark-600/20 text-center text-xs text-gray-500">
           &copy; {new Date().getFullYear()} AI IMPACT. All rights reserved.
         </div>
       </div>
@@ -990,7 +998,7 @@ function Testimonials() {
                     href={q.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-gray-600 hover:text-accent-400 transition-colors"
+                    className="text-gray-400 hover:text-accent-400 transition-colors"
                     aria-label={`${q.name} on LinkedIn`}
                   >
                     <ExternalLink className="w-4 h-4" />
@@ -1002,45 +1010,6 @@ function Testimonials() {
         </div>
       </div>
     </section>
-  )
-}
-
-/* ─── COOKIE CONSENT ─── */
-function CookieConsent() {
-  const [visible, setVisible] = React.useState(() => {
-    try { return !localStorage.getItem('cookie-consent') } catch (err) { console.warn('Cookie consent read failed:', err); return true }
-  })
-
-  if (!visible) return null
-
-  const dismiss = (choice) => {
-    try { localStorage.setItem('cookie-consent', choice) } catch (err) { console.warn('Cookie consent save failed:', err) }
-    setVisible(false)
-  }
-
-  return (
-    <div role="dialog" aria-label="Cookie consent" className="fixed bottom-0 inset-x-0 z-50 bg-dark-800 border-t border-dark-600 px-6 py-4">
-      <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center gap-4 text-sm">
-        <p className="text-gray-300">
-          This site uses third-party services (Calendly) that may set cookies.{' '}
-          <a href="/privacy.html" className="text-accent-400 hover:underline">Privacy Policy</a>
-        </p>
-        <div className="flex gap-3 shrink-0">
-          <button
-            onClick={() => dismiss('rejected')}
-            className="border border-dark-500 hover:border-gray-400 text-gray-300 font-semibold rounded-lg px-5 py-2 text-sm transition-colors whitespace-nowrap"
-          >
-            Reject
-          </button>
-          <button
-            onClick={() => dismiss('accepted')}
-            className="bg-accent-500 hover:bg-accent-600 text-white font-semibold rounded-lg px-5 py-2 text-sm transition-colors whitespace-nowrap"
-          >
-            Accept
-          </button>
-        </div>
-      </div>
-    </div>
   )
 }
 
@@ -1089,7 +1058,6 @@ export default function App() {
         <Newsletter />
       </main>
       <Footer />
-      <CookieConsent />
     </ErrorBoundary>
   )
 }

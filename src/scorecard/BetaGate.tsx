@@ -4,6 +4,7 @@
 
 import { useEffect, type ReactNode } from 'react';
 import { useBetaFlag } from './useBetaFlag';
+import { CONTACT_EMAIL } from '../config';
 
 type Props = { children: ReactNode };
 
@@ -48,7 +49,7 @@ export default function BetaGate({ children }: Props) {
         </h1>
         <p className="text-lg text-gray-400 leading-relaxed mb-10">
           Opening in the next few weeks. A free 5-minute audit that tells you where
-          your AI money is going, what is working, and what to kill — before your
+          your AI money is going, what is working, and what to kill, before your
           next board meeting.
         </p>
         <a
@@ -57,7 +58,7 @@ export default function BetaGate({ children }: Props) {
         >
           Back to the home page →
         </a>
-        <p className="text-xs text-gray-600 mt-10">
+        <p className="text-xs text-gray-400 mt-10">
           Got a beta invite link? Check you included{' '}
           <code className="text-gray-500">?beta=true</code> at the end of the URL.
         </p>
@@ -71,7 +72,7 @@ function BetaBanner() {
     <div className="bg-accent-500/90 text-white text-center text-xs font-semibold py-2 px-4">
       BETA · You're seeing the pre-launch scorecard. Feedback welcome:{' '}
       <a
-        href="mailto:marton.gaspar.uk@gmail.com?subject=Scorecard%20beta%20feedback"
+        href={`mailto:${CONTACT_EMAIL}?subject=Scorecard%20beta%20feedback`}
         className="underline"
       >
         email me

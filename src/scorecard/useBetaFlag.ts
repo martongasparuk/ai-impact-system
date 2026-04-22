@@ -24,7 +24,7 @@ export function useBetaFlag(): BetaState {
   const betaRequired =
     (import.meta.env.VITE_BETA_REQUIRED ?? '').toLowerCase() === 'true';
 
-  const [hasAccess, setHasAccess] = useState<boolean>(() => {
+  const [hasAccess] = useState<boolean>(() => {
     if (!betaRequired) return true;
     if (typeof window === 'undefined') return false;
     const params = new URLSearchParams(window.location.search);
@@ -34,16 +34,16 @@ export function useBetaFlag(): BetaState {
     return localStorage.getItem(STORAGE_KEY) === 'true';
   });
 
+  // Side-effect only: persist the URL grant to localStorage so future visits
+  // don't need the query param. State itself was already set by the initializer.
   useEffect(() => {
     if (!betaRequired) return;
     const params = new URLSearchParams(window.location.search);
     const urlGrant = params.get('beta');
     if (urlGrant === 'true') {
       localStorage.setItem(STORAGE_KEY, 'true');
-      setHasAccess(true);
     } else if (urlGrant === 'false') {
       localStorage.removeItem(STORAGE_KEY);
-      setHasAccess(false);
     }
   }, [betaRequired]);
 

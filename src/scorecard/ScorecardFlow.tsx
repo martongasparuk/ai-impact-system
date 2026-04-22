@@ -1,7 +1,7 @@
 // AI Impact Scorecard — multi-step question flow at /audit/start
-// State machine + keyboard nav + localStorage resume.
+// State machine + keyboard nav + localStorage resume (gated on PECR consent).
 
-import { useEffect, useMemo, useReducer } from 'react';
+import { useEffect, useMemo, useReducer, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   preQualifyingQuestions,
@@ -11,6 +11,7 @@ import {
   type ScoringQuestion,
 } from './questions';
 import type { ScoreLetter, Answers } from './scoring';
+import { hasStorageConsent } from '../lib/consent.js';
 
 // ────────── Types + constants ──────────
 
@@ -85,9 +86,23 @@ function reducer(state: State, action: Action): State {
 export default function ScorecardFlow() {
   const navigate = useNavigate();
   const [state, dispatch] = useReducer(reducer, initialState);
+  const [storageOk, setStorageOk] = useState(() => hasStorageConsent());
 
-  // Restore from localStorage on mount
+  // Listen for consent acceptance from the CookieConsent banner so persistence
+  // starts working mid-session without a reload.
   useEffect(() => {
+    const onChange = (e: Event) => {
+      const detail = (e as CustomEvent<string>).detail;
+      setStorageOk(detail === 'accepted');
+    };
+    window.addEventListener('cookie-consent-changed', onChange as EventListener);
+    return () => window.removeEventListener('cookie-consent-changed', onChange as EventListener);
+  }, []);
+
+  // Restore from localStorage on mount, only if consent has been given.
+  useEffect(() => {
+    document.title = 'Taking the AI Strategy Gap Audit...';
+    if (!storageOk) return;
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       const rawIndex = localStorage.getItem(STORAGE_INDEX_KEY);
@@ -99,18 +114,18 @@ export default function ScorecardFlow() {
     } catch {
       // ignore corrupted storage
     }
-    document.title = 'Taking the AI Strategy Gap Audit…';
-  }, []);
+  }, [storageOk]);
 
-  // Persist on every change
+  // Persist on every change, only if consent has been given.
   useEffect(() => {
+    if (!storageOk) return;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state.answers));
       localStorage.setItem(STORAGE_INDEX_KEY, String(state.stepIndex));
     } catch {
       // ignore quota errors
     }
-  }, [state]);
+  }, [state, storageOk]);
 
   const current = flatSteps[state.stepIndex];
   const progress = ((state.stepIndex + 1) / totalSteps) * 100;
@@ -149,10 +164,25 @@ export default function ScorecardFlow() {
     dispatch({ type: 'PREV' });
   };
 
-  // Keyboard shortcuts: 1-5 selects options A-E, arrows navigate, Enter = next
+  // Keyboard shortcuts: 1-5 selects options A-E, arrows navigate, Enter = next.
+  // Skip if the user is typing in an input / textarea / contenteditable — we
+  // don't have any such fields today, but this guard costs nothing and keeps
+  // the listener safe if anyone adds a free-text question later.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const target = e.target as HTMLElement | null;
+      if (target) {
+        const tag = target.tagName;
+        if (
+          tag === 'INPUT' ||
+          tag === 'TEXTAREA' ||
+          tag === 'SELECT' ||
+          target.isContentEditable
+        ) {
+          return;
+        }
+      }
       const options = current.kind === 'context'
         ? current.question.options
         : standardOptions;
@@ -193,6 +223,14 @@ export default function ScorecardFlow() {
 
   return (
     <div className="min-h-screen bg-dark-950 text-gray-200 font-sans antialiased">
+      {/* Skip-to-content for keyboard users */}
+      <a
+        href="#audit-main"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:bg-accent-500 focus:text-white focus:px-3 focus:py-2 focus:rounded"
+      >
+        Skip to question
+      </a>
+
       {/* Top bar with progress */}
       <header className="border-b border-dark-700 sticky top-0 bg-dark-950/95 backdrop-blur z-10">
         <div className="max-w-3xl mx-auto px-6 py-4">
@@ -200,11 +238,18 @@ export default function ScorecardFlow() {
             <a href="/audit" className="text-white font-bold tracking-tight text-base">
               AI Impact System · Audit
             </a>
-            <span className="text-xs text-gray-500 uppercase tracking-wider">
+            <span className="text-xs text-gray-400 uppercase tracking-wider">
               {state.stepIndex + 1} / {totalSteps}
             </span>
           </div>
-          <div className="h-1 w-full bg-dark-700 rounded overflow-hidden">
+          <div
+            className="h-1 w-full bg-dark-700 rounded overflow-hidden"
+            role="progressbar"
+            aria-label="Audit progress"
+            aria-valuemin={0}
+            aria-valuemax={totalSteps}
+            aria-valuenow={state.stepIndex + 1}
+          >
             <div
               className="h-full bg-accent-500 transition-all duration-300 ease-out"
               style={{ width: `${progress}%` }}
@@ -214,7 +259,7 @@ export default function ScorecardFlow() {
       </header>
 
       {/* Question */}
-      <main className="max-w-2xl mx-auto px-6 pt-14 pb-32">
+      <main id="audit-main" className="max-w-2xl mx-auto px-6 pt-14 pb-32">
         <p className="text-xs uppercase tracking-[0.22em] text-accent-400 font-semibold mb-6">
           {sectionLabel}
         </p>
@@ -255,7 +300,7 @@ export default function ScorecardFlow() {
           })}
         </div>
 
-        <p className="text-xs text-gray-600 mt-6">
+        <p className="text-xs text-gray-400 mt-6">
           Tip: press{' '}
           <kbd className="px-1.5 py-0.5 bg-dark-800 border border-dark-600 rounded text-gray-400 font-mono">
             1–{currentOptions.length}
@@ -293,6 +338,10 @@ export default function ScorecardFlow() {
           >
             {isLastStep ? 'See my score →' : 'Next →'}
           </button>
+        </div>
+        <div className="max-w-2xl mx-auto px-6 pb-3 flex flex-wrap justify-center gap-x-4 text-[11px] text-gray-400">
+          <a href="/privacy.html" className="hover:text-gray-300">Privacy</a>
+          <a href="/terms.html" className="hover:text-gray-300">Terms</a>
         </div>
       </footer>
     </div>

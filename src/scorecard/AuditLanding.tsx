@@ -145,14 +145,16 @@ export default function AuditLanding() {
       <footer className="border-t border-dark-700 mt-20">
         <div className="max-w-5xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs text-gray-500">
           <span>© {new Date().getFullYear()} Marton Gaspar · AI Impact System</span>
-          <span>
+          <span className="flex flex-wrap gap-x-4 gap-y-1">
+            <a href="/privacy.html" className="text-gray-400 hover:text-white">Privacy</a>
+            <a href="/terms.html" className="text-gray-400 hover:text-white">Terms</a>
             <a
               href="https://www.linkedin.com/in/martongaspar/"
               className="text-gray-400 hover:text-white"
               target="_blank"
               rel="noopener noreferrer"
             >
-              Follow on LinkedIn
+              LinkedIn
             </a>
           </span>
         </div>

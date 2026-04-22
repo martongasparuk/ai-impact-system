@@ -13,22 +13,20 @@ const STORAGE_KEY = 'ais-scorecard-answers-v1';
 
 export default function ResultPage() {
   const navigate = useNavigate();
-  const [answers, setAnswers] = useState<Answers | null>(null);
+  const [answers] = useState<Answers | null>(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return null;
+      return JSON.parse(raw) as Answers;
+    } catch {
+      return null;
+    }
+  });
 
   useEffect(() => {
     document.title = 'Your AI Strategy Gap Score | AI Impact System';
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) {
-        navigate('/audit');
-        return;
-      }
-      const parsed = JSON.parse(raw) as Answers;
-      setAnswers(parsed);
-    } catch {
-      navigate('/audit');
-    }
-  }, [navigate]);
+    if (!answers) navigate('/audit');
+  }, [answers, navigate]);
 
   const scorecard = useMemo(() => {
     if (!answers) return null;
@@ -81,7 +79,7 @@ export default function ResultPage() {
               <span className="text-[88px] leading-none font-black text-white">
                 {scorecard.normalisedScore}
               </span>
-              <span className="text-3xl text-gray-600 font-bold">/ 100</span>
+              <span className="text-3xl text-gray-500 font-bold">/ 100</span>
             </div>
             <div
               className={`inline-block px-4 py-2 rounded-md border text-lg font-bold mb-6 ${bandAccent}`}
@@ -148,7 +146,7 @@ export default function ResultPage() {
         {/* ── Retake / stats ── */}
         <section className="pt-10 border-t border-dark-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-sm text-gray-500">
           <span>
-            Score: {scorecard.rawScore}/96 raw ·{' '}
+            Score: {scorecard.rawScore}/{scorecard.maxRawScore} raw ·{' '}
             {scorecard.salesTriggerCount} help-flags ·{' '}
             {scorecard.band.name}
           </span>
@@ -163,6 +161,13 @@ export default function ResultPage() {
           >
             Retake the audit
           </button>
+        </section>
+
+        {/* ── Legal footer ── */}
+        <section className="pt-6 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+          <a href="/privacy.html" className="hover:text-white">Privacy</a>
+          <a href="/terms.html" className="hover:text-white">Terms</a>
+          <span>© {new Date().getFullYear()} Marton Gaspar · AI Impact System</span>
         </section>
       </main>
     </div>

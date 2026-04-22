@@ -1,20 +1,14 @@
 // Diagnostic Call CTA — opens Cal.com booking in new tab.
-// Set VITE_CAL_URL in .env to override the placeholder URL.
+
+import { BRAND_EMAIL, CAL_COM_URL } from '../config';
 
 type Props = {
   label: string;
   route: 'diagnostic_call' | 'webinar' | 'nurture_only' | 'waitlist';
 };
 
-// Fallback placeholder. Replace via VITE_CAL_URL env var once Marton sets up Cal.com.
-const DEFAULT_CAL_URL = 'https://cal.com/marton-gaspar/diagnostic-call';
-
 function getBookingUrl(route: Props['route']): string {
-  const configured = import.meta.env.VITE_CAL_URL as string | undefined;
-  const base = configured && configured.trim().length > 0 ? configured : DEFAULT_CAL_URL;
-
-  // Attach UTM for routing attribution
-  const url = new URL(base);
+  const url = new URL(CAL_COM_URL);
   url.searchParams.set('utm_source', 'aiimpactsystem');
   url.searchParams.set('utm_medium', 'scorecard');
   url.searchParams.set('utm_campaign', route);
@@ -25,7 +19,7 @@ export default function DiagnosticCallCTA({ label, route }: Props) {
   if (route === 'waitlist') {
     return (
       <a
-        href="mailto:marton@aiimpactsystem.com?subject=Compounding%20Roundtable%20Waitlist"
+        href={`mailto:${BRAND_EMAIL}?subject=Compounding%20Roundtable%20Waitlist`}
         className="inline-flex items-center gap-2 bg-cyan-500 hover:bg-cyan-400 text-dark-950 font-semibold px-7 py-4 rounded-lg text-base transition-colors"
       >
         {label}

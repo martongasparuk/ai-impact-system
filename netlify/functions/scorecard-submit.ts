@@ -1,11 +1,32 @@
 // Netlify Function: POST /api/scorecard-submit
 // Receives completed scorecard, writes to Supabase, triggers immediate email via Resend.
-// Fails gracefully: if env vars are missing, logs a warning and returns 200 so the client
-// does not lose the lead (the client keeps a localStorage copy as fallback).
+// Hard-fails when Supabase insert fails so the client can retry; soft-fails the email
+// (record exists and n8n can retry the send).
 
 import type { Handler } from '@netlify/functions';
-import { createClient } from '@supabase/supabase-js';
-import { Resend } from 'resend';
+import {
+  SITE_ORIGIN,
+  corsHeaders,
+  resolveAllowedOrigin,
+  unsubscribeUrlFor,
+  exportUrlFor,
+  eraseUrlFor,
+  newRequestId,
+  checkRateLimit,
+  clientIp,
+  jsonResponse,
+} from './_lib/common';
+import { sendImmediateReport } from './_lib/immediate-report';
+import { getSupabaseServiceClient } from './_lib/supabase-client';
+
+const MAX_BODY_BYTES = 32 * 1024;
+const PRIVACY_VERSION = '2026-04-21';
+
+type ConsentBlock = {
+  timestamp?: string;
+  privacyVersion?: string;
+  dripOptIn?: boolean;
+};
 
 type Payload = {
   email?: string;
@@ -28,49 +49,100 @@ type Payload = {
     campaign?: string | null;
     medium?: string | null;
   };
+  consent?: ConsentBlock;
   submittedAt?: string;
 };
 
-const jsonResponse = (status: number, body: unknown) => ({
-  statusCode: status,
-  headers: {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-  },
-  body: JSON.stringify(body),
-});
+const respond = (
+  status: number,
+  body: unknown,
+  requestOrigin: string | undefined,
+  requestId: string,
+) =>
+  jsonResponse(status, body, {
+    ...corsHeaders(requestOrigin),
+    'X-Request-Id': requestId,
+  });
 
 export const handler: Handler = async (event) => {
-  // CORS preflight
+  const requestId = newRequestId();
+  const origin = (event.headers['origin'] ?? event.headers['Origin']) as string | undefined;
+  const allowedOrigin = resolveAllowedOrigin(origin);
+
   if (event.httpMethod === 'OPTIONS') {
-    return jsonResponse(204, null);
+    return respond(allowedOrigin ? 204 : 403, null, origin, requestId);
   }
   if (event.httpMethod !== 'POST') {
-    return jsonResponse(405, { error: 'Method not allowed' });
+    return respond(405, { error: 'Method not allowed' }, origin, requestId);
+  }
+
+  // Origin check — reject browser submissions from foreign sites.
+  // Server-to-server callers (no Origin header) are permitted so ops can replay.
+  if (origin && !allowedOrigin) {
+    console.warn(`[scorecard-submit ${requestId}] origin rejected`, { origin });
+    return respond(403, { error: 'Origin not allowed' }, origin, requestId);
+  }
+
+  // Body size cap (DoS guard).
+  const rawBody = event.body ?? '';
+  if (rawBody.length > MAX_BODY_BYTES) {
+    return respond(413, { error: 'Payload too large' }, origin, requestId);
+  }
+
+  // IP-based rate limit. 20 submissions per minute per IP, burst 30.
+  const ip = clientIp(event.headers);
+  const rl = checkRateLimit(`submit:${ip}`, { capacity: 30, refillPerMin: 20 });
+  if (!rl.allowed) {
+    return respond(429, { error: 'Too many requests', retryAfterSec: rl.retryAfterSec }, origin, requestId);
   }
 
   let payload: Payload;
   try {
-    payload = JSON.parse(event.body ?? '{}') as Payload;
+    payload = JSON.parse(rawBody || '{}') as Payload;
   } catch {
-    return jsonResponse(400, { error: 'Invalid JSON' });
+    return respond(400, { error: 'Invalid JSON' }, origin, requestId);
   }
 
-  // Validation
-  if (!payload.email || !payload.email.includes('@')) {
-    return jsonResponse(400, { error: 'Valid email required' });
+  // Field-level validation. `fields` is surfaced next to the relevant input.
+  const fieldErrors: { field: string; message: string }[] = [];
+  if (!payload.email || typeof payload.email !== 'string' || !payload.email.includes('@')) {
+    fieldErrors.push({ field: 'email', message: 'Please enter a valid email address.' });
+  } else if (payload.email.length > 254) {
+    fieldErrors.push({ field: 'email', message: 'Email address is too long.' });
+  }
+  if (typeof payload.firstName === 'string' && payload.firstName.length > 100) {
+    fieldErrors.push({ field: 'firstName', message: 'First name is too long.' });
+  }
+  if (typeof payload.company === 'string' && payload.company.length > 200) {
+    fieldErrors.push({ field: 'company', message: 'Company name is too long.' });
+  }
+  if (fieldErrors.length > 0) {
+    return respond(
+      400,
+      { error: 'Validation failed', fields: fieldErrors },
+      origin,
+      requestId,
+    );
   }
   if (!payload.scorecard || typeof payload.scorecard.normalisedScore !== 'number') {
-    return jsonResponse(400, { error: 'Invalid scorecard payload' });
+    return respond(400, { error: 'Invalid scorecard payload' }, origin, requestId);
   }
 
-  // Env check — fail soft
+  // Per-email rate limit. 5 submissions per hour per email (legitimate retakes allowed).
+  const emailRl = checkRateLimit(`submit-email:${payload.email.toLowerCase()}`, {
+    capacity: 5,
+    refillPerMin: 5 / 60,
+  });
+  if (!emailRl.allowed) {
+    return respond(429, { error: 'Rate limit: try again later', retryAfterSec: emailRl.retryAfterSec }, origin, requestId);
+  }
+
   const SUPABASE_URL = process.env.SCORECARD_SUPABASE_URL;
   const SUPABASE_KEY = process.env.SCORECARD_SUPABASE_SERVICE_ROLE_KEY;
   const RESEND_KEY = process.env.RESEND_API_KEY;
   const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? 'Marton Gaspar <marton@aiimpactsystem.com>';
+  const POSTAL_ADDRESS =
+    process.env.POSTAL_ADDRESS ?? 'Marton Gaspar, London, United Kingdom';
 
   const missing: string[] = [];
   if (!SUPABASE_URL) missing.push('SCORECARD_SUPABASE_URL');
@@ -79,25 +151,28 @@ export const handler: Handler = async (event) => {
 
   if (missing.length > 0) {
     console.warn(
-      `[scorecard-submit] Missing env vars: ${missing.join(', ')}. Payload received but not persisted. Client will fall back to localStorage.`,
-      { email: payload.email, band: payload.scorecard.band, score: payload.scorecard.normalisedScore },
+      `[scorecard-submit ${requestId}] missing env vars, payload accepted as localStorage-only`,
+      { missing, email: payload.email, band: payload.scorecard.band },
     );
-    // Return 200 so the client shows success — the lead is stored locally until we wire secrets.
-    return jsonResponse(200, {
-      ok: true,
-      stored: 'env_missing_logged_only',
-      missing,
-    });
+    return respond(
+      503,
+      { error: 'Service not configured', missing, requestId },
+      origin,
+      requestId,
+    );
   }
 
   // ───── Write to Supabase ─────
+  const consent: ConsentBlock = payload.consent ?? {};
+  const normalisedEmail = payload.email.toLowerCase();
+
   let insertedId: string | null = null;
   try {
-    const supabase = createClient(SUPABASE_URL!, SUPABASE_KEY!);
+    const supabase = getSupabaseServiceClient()!;
     const { data, error } = await supabase
       .from('scorecard_responses')
       .insert({
-        email: payload.email.toLowerCase(),
+        email: normalisedEmail,
         first_name: payload.firstName ?? null,
         company: payload.company ?? null,
         role: payload.answers.context.PQ1 ?? null,
@@ -119,6 +194,9 @@ export const handler: Handler = async (event) => {
         utm_source: payload.utm?.source ?? null,
         utm_campaign: payload.utm?.campaign ?? null,
         utm_medium: payload.utm?.medium ?? null,
+        consent_timestamp: consent.timestamp ?? new Date().toISOString(),
+        privacy_version: consent.privacyVersion ?? PRIVACY_VERSION,
+        drip_consent: Boolean(consent.dripOptIn),
         submitted_at: payload.submittedAt ?? new Date().toISOString(),
       })
       .select('id')
@@ -127,97 +205,56 @@ export const handler: Handler = async (event) => {
     if (error) throw error;
     insertedId = data.id;
   } catch (err) {
-    console.error('[scorecard-submit] Supabase insert failed', err);
-    // Don't fail — still try to send email. Client has localStorage backup.
+    // 23505 = unique violation. Treat as idempotent (double-click, refresh, n8n retry).
+    const code = (err as { code?: string } | null)?.code;
+    if (code === '23505') {
+      console.warn(`[scorecard-submit ${requestId}] duplicate same-day submission, treating as idempotent`, { email: normalisedEmail });
+    } else {
+      console.error(`[scorecard-submit ${requestId}] supabase insert failed`, {
+        err,
+        email: normalisedEmail,
+        utm: payload.utm,
+      });
+      return respond(
+        502,
+        { error: 'Could not save submission', requestId },
+        origin,
+        requestId,
+      );
+    }
   }
 
   // ───── Send immediate email via Resend ─────
+  // Soft-fail: the Supabase record exists, n8n can retry.
+  let emailStatus: 'sent' | 'failed' = 'sent';
   try {
-    const resend = new Resend(RESEND_KEY!);
-    const html = immediateReportHtml(payload);
-    const text = immediateReportText(payload);
-    await resend.emails.send({
-      from: FROM_EMAIL,
-      to: payload.email,
-      subject: `Your AI Strategy Gap score: ${payload.scorecard.band}`,
-      html,
-      text,
-      tags: [
-        { name: 'type', value: 'scorecard_immediate' },
-        { name: 'band', value: payload.scorecard.band },
-      ],
+    const unsubSecret = process.env.UNSUBSCRIBE_SECRET;
+    const unsubUrl = unsubSecret ? unsubscribeUrlFor(payload.email, unsubSecret) : `${SITE_ORIGIN}/audit`;
+    const exportUrl = unsubSecret ? exportUrlFor(payload.email, unsubSecret) : `${SITE_ORIGIN}/privacy.html`;
+    const eraseUrl = unsubSecret ? eraseUrlFor(payload.email, unsubSecret) : `${SITE_ORIGIN}/privacy.html`;
+    await sendImmediateReport(RESEND_KEY!, FROM_EMAIL, {
+      firstName: payload.firstName,
+      email: payload.email,
+      band: payload.scorecard.band,
+      normalisedScore: payload.scorecard.normalisedScore,
+      unsubUrl,
+      exportUrl,
+      eraseUrl,
+      postal: POSTAL_ADDRESS,
+      includeListUnsubscribeHeaders: Boolean(unsubSecret),
     });
   } catch (err) {
-    console.error('[scorecard-submit] Resend email failed', err);
-    // Don't fail — record is in Supabase. We can retry via n8n.
+    emailStatus = 'failed';
+    console.error(`[scorecard-submit ${requestId}] resend send failed`, {
+      err,
+      email: normalisedEmail,
+    });
   }
 
-  return jsonResponse(200, { ok: true, id: insertedId });
+  return respond(
+    200,
+    { ok: true, id: insertedId, emailStatus, requestId },
+    origin,
+    requestId,
+  );
 };
-
-// ─────────────────────────────────────────────────
-// Email templates — keep inline to avoid runtime file I/O.
-// Day 1/3/5/7/14 templates live in /emails/templates/ for n8n to read.
-// ─────────────────────────────────────────────────
-
-function immediateReportHtml(p: Payload): string {
-  const name = p.firstName ? `Hi ${p.firstName},` : 'Hi,';
-  const band = p.scorecard.band;
-  const score = p.scorecard.normalisedScore;
-
-  return `<!doctype html>
-<html>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif; color: #111; line-height: 1.6; max-width: 560px; margin: 0 auto; padding: 24px;">
-  <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 2px; color: #666; margin: 0 0 8px;">AI IMPACT SYSTEM</p>
-  <h1 style="font-size: 28px; margin: 0 0 20px; line-height: 1.2;">Your AI Strategy Gap score: <strong>${score}/100 — ${band}</strong></h1>
-
-  <p>${name}</p>
-
-  <p>Your full report is on the link below. It names the 2-3 pillars where you're carrying the most risk. It does not tell you how to fix them — that's what the Diagnostic Call is for.</p>
-
-  <p style="margin: 24px 0;">
-    <a href="https://aiimpactsystem.com/audit/result" style="display: inline-block; background: #6366f1; color: white; text-decoration: none; padding: 12px 20px; border-radius: 6px; font-weight: 600;">View full report →</a>
-  </p>
-
-  <p>I run 4 free Diagnostic Calls per month. 30 minutes, me, your real data. You leave with a one-page summary of where the money is going and one recommendation.</p>
-
-  <p style="margin: 24px 0;">
-    <a href="https://cal.com/marton-gaspar/diagnostic-call" style="display: inline-block; background: transparent; color: #6366f1; text-decoration: none; padding: 12px 20px; border-radius: 6px; border: 1px solid #6366f1; font-weight: 600;">Book the Diagnostic Call →</a>
-  </p>
-
-  <p>Marton</p>
-
-  <p style="font-size: 13px; color: #666; margin-top: 32px;">P.S. If the score felt surprising, it's usually because the gap has been invisible. That's the point.</p>
-
-  <hr style="margin: 32px 0; border: none; border-top: 1px solid #eee;">
-  <p style="font-size: 12px; color: #888;">
-    You got this email because you completed the AI Strategy Gap Audit at aiimpactsystem.com/audit.<br>
-    Unsubscribe any time by replying with "unsubscribe".
-  </p>
-</body>
-</html>`;
-}
-
-function immediateReportText(p: Payload): string {
-  const name = p.firstName ? `Hi ${p.firstName},` : 'Hi,';
-  return `Your AI Strategy Gap score: ${p.scorecard.normalisedScore}/100 — ${p.scorecard.band}
-
-${name}
-
-Your full report is on the link below. It names the 2-3 pillars where you're carrying the most risk. It does not tell you how to fix them — that's what the Diagnostic Call is for.
-
-View full report: https://aiimpactsystem.com/audit/result
-
-I run 4 free Diagnostic Calls per month. 30 minutes, me, your real data. You leave with a one-page summary of where the money is going and one recommendation.
-
-Book the Diagnostic Call: https://cal.com/marton-gaspar/diagnostic-call
-
-Marton
-
-P.S. If the score felt surprising, it's usually because the gap has been invisible. That's the point.
-
----
-You got this email because you completed the AI Strategy Gap Audit at aiimpactsystem.com/audit.
-Unsubscribe any time by replying with "unsubscribe".
-`;
-}

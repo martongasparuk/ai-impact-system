@@ -55,23 +55,24 @@ const pointsFor = (letter?: ScoreLetter): number => {
   return standardOptions.find((o) => o.value === letter)?.points ?? 0;
 };
 
-/** Maps a PQ3 spend option to a representative quarterly spend midpoint in £ */
+/** Quarterly AI-spend midpoints in £ for each PQ3 bracket.
+ *  Midpoints of the declared ranges, with `gt_200k` set to £300k as a
+ *  conservative midpoint of the open-ended top bracket and `unknown` set to
+ *  the lower-mid-market typical we see across the pipeline (£25k/quarter). */
+const SPEND_MIDPOINTS_GBP: Record<string, number> = {
+  lt_5k:   2_500,
+  '5_25k': 15_000,
+  '25_75k': 50_000,
+  '75_200k': 137_500,
+  gt_200k: 300_000,
+  unknown: 25_000,
+};
+
+const DEFAULT_QUARTERLY_SPEND_GBP = SPEND_MIDPOINTS_GBP.unknown;
+
 const spendMidpoint = (pq3?: string): number => {
-  switch (pq3) {
-    case 'lt_5k':
-      return 2500;
-    case '5_25k':
-      return 15000;
-    case '25_75k':
-      return 50000;
-    case '75_200k':
-      return 137500;
-    case 'gt_200k':
-      return 300000;
-    case 'unknown':
-    default:
-      return 25000; // assume lower-mid-market typical
-  }
+  if (!pq3) return DEFAULT_QUARTERLY_SPEND_GBP;
+  return SPEND_MIDPOINTS_GBP[pq3] ?? DEFAULT_QUARTERLY_SPEND_GBP;
 };
 
 /** Waste multipliers by band — % of annual AI spend likely unproductive */
