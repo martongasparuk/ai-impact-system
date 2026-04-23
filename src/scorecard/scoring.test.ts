@@ -21,37 +21,37 @@ function buildAnswers(
 // ────────── Band boundaries ──────────
 
 describe('band boundaries', () => {
-  it('all-A (96/96 → 100) is Compounding', () => {
+  it('all-A (72/72 → 100) is Compounding', () => {
     const s = calculateScorecard(buildAnswers(allAnswersAs('A')));
-    expect(s.rawScore).toBe(96);
+    expect(s.rawScore).toBe(72);
     expect(s.normalisedScore).toBe(100);
     expect(s.band.name).toBe('Compounding');
   });
 
-  it('all-E (0/96 → 0) is Exposed', () => {
+  it('all-E (0/72 → 0) is Exposed', () => {
     const s = calculateScorecard(buildAnswers(allAnswersAs('E')));
     expect(s.rawScore).toBe(0);
     expect(s.normalisedScore).toBe(0);
     expect(s.band.name).toBe('Exposed');
   });
 
-  it('all-D (1pt × 24 = 24/96 → 25) is Exposed', () => {
+  it('all-D (1pt × 18 = 18/72 → 25) is Exposed', () => {
     const s = calculateScorecard(buildAnswers(allAnswersAs('D')));
-    expect(s.rawScore).toBe(24);
+    expect(s.rawScore).toBe(18);
     expect(s.normalisedScore).toBe(25);
     expect(s.band.name).toBe('Exposed');
   });
 
-  it('all-C (2pt × 24 = 48/96 → 50) is Reactive', () => {
+  it('all-C (2pt × 18 = 36/72 → 50) is Reactive', () => {
     const s = calculateScorecard(buildAnswers(allAnswersAs('C')));
-    expect(s.rawScore).toBe(48);
+    expect(s.rawScore).toBe(36);
     expect(s.normalisedScore).toBe(50);
     expect(s.band.name).toBe('Reactive');
   });
 
-  it('all-B (3pt × 24 = 72/96 → 75) is Directional', () => {
+  it('all-B (3pt × 18 = 54/72 → 75) is Directional', () => {
     const s = calculateScorecard(buildAnswers(allAnswersAs('B')));
-    expect(s.rawScore).toBe(72);
+    expect(s.rawScore).toBe(54);
     expect(s.normalisedScore).toBe(75);
     expect(s.band.name).toBe('Directional');
   });
